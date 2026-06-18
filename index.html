@@ -298,7 +298,7 @@ body {
 
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────────
-const SERVER = "https://api.mebx.uz";  // serverga joylashganda o'zgartiring
+const SERVER = "http://localhost:8081";  // serverga joylashganda o'zgartiring
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let details = [];
@@ -496,8 +496,8 @@ function toggleKrom(i, side) {
   tip1 = document.getElementById("tip1").value.trim();
   tip2 = document.getElementById("tip2").value.trim();
   const d=details[i], cur=d[side];
-  if (!cur) d[side]=tip1||"•";
-  else if (tip2&&cur!==tip2) d[side]=tip2;
+  if (!cur) d[side]=tip1||"Kromka1";
+  else if (tip2 && cur!==(tip2||"Kromka2")) d[side]=tip2||"Kromka2";
   else d[side]="";
   renderKrom();
   const row=document.getElementById("row-"+i);
