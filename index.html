@@ -300,7 +300,6 @@ body {
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const SERVER = "https://api.mebx.uz";  // serverga joylashganda o'zgartiring
 
-
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let details = [];
 let tip1 = "", tip2 = "";
@@ -477,7 +476,6 @@ function deleteRow(i) {
   } else {
     if (!confirm(msg)) return;
     details.splice(i, 1); renderList(); showToast("🗑 Qator o'chirildi");
-}
 }
 
 function addRow() {
