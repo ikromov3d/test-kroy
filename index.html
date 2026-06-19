@@ -266,9 +266,9 @@ body {
   <div class="section-label">SOZLAMALAR</div>
   <div class="kroy-options">
     <div class="kroy-option-row" onclick="toggleRotate()">
-      <div class="kroy-toggle on" id="rotate-toggle"></div>
+      <div class="kroy-toggle" id="rotate-toggle"></div>
       <div class="kroy-option-label">Burilish ruxsat</div>
-      <div class="kroy-option-hint" id="rotate-hint">Tekstura yo'q</div>
+      <div class="kroy-option-hint" id="rotate-hint">Tekstura bor</div>
     </div>
   </div>
 
@@ -298,13 +298,13 @@ body {
 
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────────
-const SERVER = "https://api.mebx.uz";
+const SERVER = "https://api.mebx.uz";  // serverga joylashganda o'zgartiring
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let details = [];
 let tip1 = "", tip2 = "";
 let currentTab = "list";
-let rotateAll = true;
+let rotateAll = false;
 let selectedSize = null;   // {l, w} yoki "universal"
 let kroyLoading = false;
 const tg = window.Telegram?.WebApp;
