@@ -298,7 +298,8 @@ body {
 
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────────
-cconst SERVER = "https://api.mebx.uz";  // serverga joylashganda o'zgartiring
+const SERVER = "https://api.mebx.uz";  // serverga joylashganda o'zgartiring
+
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let details = [];
@@ -476,7 +477,7 @@ function deleteRow(i) {
   } else {
     if (!confirm(msg)) return;
     details.splice(i, 1); renderList(); showToast("🗑 Qator o'chirildi");
-}
+  }
 }
 
 function addRow() {
