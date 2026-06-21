@@ -73,6 +73,9 @@ body {
 .detail-row.editing { background: rgba(10,132,255,0.06); cursor: default; }
 .detail-row.editing .detail-size-text { display: none; }
 .detail-row:not(.editing) .detail-size-input { display: none; }
+.detail-row.editing .detail-name-input { display: block !important; }
+.detail-row:not(.editing) .detail-name-input { display: none !important; }
+.detail-row.editing .detail-name-text { display: none !important; }
 .detail-num { font-size: 13px; color: var(--hint); width: 22px; flex-shrink: 0; text-align: right; }
 .detail-size { flex: 1; font-size: 15px; font-variant-numeric: tabular-nums; }
 .detail-size-input { display: flex; align-items: center; gap: 4px; flex: 1; }
@@ -394,7 +397,7 @@ function renderList() {
       <div class="detail-num">${i+1}</div>
       <div class="detail-size" style="flex:1;display:flex;align-items:center;gap:4px;flex-wrap:nowrap;">
         <div class="detail-size-text" style="white-space:nowrap">${d.uzun}×${d.keng}×${d.son}</div>
-        <div class="detail-size-input" id="edit-${i}" style="display:none;align-items:center;gap:2px;">
+        <div class="detail-size-input" id="edit-${i}" style="align-items:center;gap:2px;">
           <input class="size-field" id="f-uzun-${i}" type="number" inputmode="numeric" value="${d.uzun}">
           <span class="size-sep">×</span>
           <input class="size-field" id="f-keng-${i}" type="number" inputmode="numeric" value="${d.keng}">
@@ -403,7 +406,7 @@ function renderList() {
         </div>
         <button class="btn-icon ${d.txt===false?'btn-txt-off':'btn-txt-on'}" style="flex-shrink:0;font-size:13px;padding:2px 5px;" title="${d.txt===false?"Yo'lini farqi yo'q":"Yo'lini farqi bor"}" onclick="event.stopPropagation();toggleTxt(${i})">${d.txt===false?'—':'🌲'}</button>
         <div class="detail-name-text" style="flex:1;color:var(--hint);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.naim||''}</div>
-        <input class="detail-name-input size-field" id="f-naim-${i}" style="display:none;flex:1;min-width:80px;" type="text" placeholder="Nom..." value="${d.naim||''}">
+        <input class="detail-name-input size-field" id="f-naim-${i}" style="flex:1;min-width:80px;" type="text" placeholder="Nom..." value="${d.naim||''}">
       </div>
       <div class="detail-badges">${kromBadges(d)}</div>
       <div class="row-actions">
@@ -434,16 +437,7 @@ function startEdit(i) {
   const row = document.getElementById("row-"+i);
   if (!row) return;
   row.classList.add("editing");
-  // O'lcham inputlarini ko'rsatish
-  const editDiv = document.getElementById("edit-"+i);
-  if (editDiv) editDiv.style.display = "flex";
-  const sizeText = row.querySelector(".detail-size-text");
-  if (sizeText) sizeText.style.display = "none";
-  // Nom inputni ko'rsatish
   const naimInput = document.getElementById("f-naim-"+i);
-  const naimText  = row.querySelector(".detail-name-text");
-  if (naimInput) naimInput.style.display = "block";
-  if (naimText)  naimText.style.display  = "none";
 
   ["uzun","keng","son"].forEach(f => {
     const el = document.getElementById(`f-${f}-${i}`);
