@@ -39,8 +39,6 @@ body {
   cursor: pointer; transition: all 0.2s; white-space: nowrap;
 }
 .tab.active { background: var(--btn); color: var(--btn-text); }
-.btn-txt-on  { background: rgba(52,199,89,0.15);  color: #34c759; border: 1px solid rgba(52,199,89,0.3); }
-.btn-txt-off { background: rgba(142,142,147,0.15); color: var(--hint); border: 1px solid rgba(142,142,147,0.3); }
 
 /* SCREENS */
 .screen { display: none; padding: 12px 0; }
@@ -486,12 +484,6 @@ function closeAllEdits() {
   });
 }
 
-function toggleTxt(i) {
-  details[i].txt = details[i].txt === false ? true : false;
-  renderList();
-  showToast(details[i].txt === false ? "🔄 Yo'lini farqi yo'q" : "🌲 Yo'lini farqi bor");
-}
-
 function deleteRow(i) {
   const d = details[i];
   const msg = (i+1)+"-qatorni o'chirasizmi?\n"+d.uzun+"×"+d.keng+"×"+d.son;
@@ -510,7 +502,7 @@ function deleteRow(i) {
     if (!confirm(msg)) return;
     details.splice(i, 1); renderList(); showToast("🗑 Qator o'chirildi");
 }
-
+}
 function addRow() {
   details.push({uzun:0,keng:0,son:1,uzun1:"",uzun2:"",keng1:"",keng2:""});
   renderList();
