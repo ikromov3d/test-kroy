@@ -733,10 +733,14 @@ function sendData() {
 
   const payload = {
     tip1, tip2,
+    rotate_all: rotateAll,
     details: details.map(d => ({
       uzun:+d.uzun, keng:+d.keng, son:+d.son,
       uzun1:d.uzun1||"", uzun2:d.uzun2||"",
       keng1:d.keng1||"", keng2:d.keng2||"",
+      txt:     d.txt !== undefined ? d.txt : true,
+      naim:    d.naim||"",
+      povorot: d.povorot||0,
     })),
   };
 
@@ -761,5 +765,3 @@ function showToast(msg) {
 </script>
 </body>
 </html>
-
-
