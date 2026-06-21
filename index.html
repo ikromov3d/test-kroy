@@ -269,8 +269,8 @@ body {
   <div class="kroy-options">
     <div class="kroy-option-row" onclick="toggleRotate()">
       <div class="kroy-toggle" id="rotate-toggle"></div>
-      <div class="kroy-option-label">Tekstura yo'lini farqi bor</div>
-      <div class="kroy-option-hint" id="rotate-hint">Ha</div>
+      <div class="kroy-option-label">Burilish ruxsat</div>
+      <div class="kroy-option-hint" id="rotate-hint">Tekstura bor</div>
     </div>
   </div>
 
@@ -299,10 +299,10 @@ body {
 <div class="toast" id="toast"></div>
 
 <script>
-// ── CONFIG ────────────────────────────────────────────────────────────────────
+// CONFIG 
 const SERVER = "https://api.mebx.uz";  // serverga joylashganda o'zgartiring
 
-// ── STATE ─────────────────────────────────────────────────────────────────────
+//  STATE 
 let details = [];
 let tip1 = "", tip2 = "";
 let currentTab = "list";
@@ -313,7 +313,7 @@ const tg = window.Telegram?.WebApp;
 
 const SHEET_SIZES = [[2440,1220],[2500,1830],[2750,1830],[2800,2070]];
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
+// INIT
 (function init() {
   if (tg) { tg.ready(); tg.expand(); }
 
@@ -404,7 +404,7 @@ function renderList() {
           <span class="size-sep">×</span>
           <input class="size-field" id="f-son-${i}" type="number" inputmode="numeric" value="${d.son}">
         </div>
-
+        <button class="btn-icon ${d.txt===false?'btn-txt-off':'btn-txt-on'}" style="flex-shrink:0;font-size:13px;padding:2px 5px;" title="${d.txt===false?"Yo'lini farqi yo'q":"Yo'lini farqi bor"}" onclick="event.stopPropagation();toggleTxt(${i})">${d.txt===false?'—':'🌲'}</button>
         <div class="detail-name-text" style="flex:1;color:var(--hint);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.naim||''}</div>
         <input class="detail-name-input size-field" id="f-naim-${i}" style="display:none;flex:1;min-width:80px;" type="text" placeholder="Nom..." value="${d.naim||''}">
       </div>
@@ -594,8 +594,8 @@ function toggleRotate() {
   rotateAll = !rotateAll;
   const tog = document.getElementById("rotate-toggle");
   const hint = document.getElementById("rotate-hint");
-  if (rotateAll) { tog.classList.add("on"); hint.textContent="Ha"; }
-  else           { tog.classList.remove("on"); hint.textContent="Yo'q"; }
+  if (rotateAll) { tog.classList.add("on"); hint.textContent="Tekstura yo'q"; }
+  else           { tog.classList.remove("on"); hint.textContent="Tekstura bor"; }
   if (selectedSize) runKroy();
 }
 
@@ -733,14 +733,10 @@ function sendData() {
 
   const payload = {
     tip1, tip2,
-    rotate_all: rotateAll,
     details: details.map(d => ({
       uzun:+d.uzun, keng:+d.keng, son:+d.son,
       uzun1:d.uzun1||"", uzun2:d.uzun2||"",
       keng1:d.keng1||"", keng2:d.keng2||"",
-      txt:     !rotateAll,
-      naim:    d.naim||"",
-      povorot: rotateAll ? 0 : 1,
     })),
   };
 
@@ -765,3 +761,5 @@ function showToast(msg) {
 </script>
 </body>
 </html>
+
+
