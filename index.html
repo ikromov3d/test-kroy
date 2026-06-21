@@ -39,6 +39,8 @@ body {
   cursor: pointer; transition: all 0.2s; white-space: nowrap;
 }
 .tab.active { background: var(--btn); color: var(--btn-text); }
+.btn-txt-on  { background: rgba(52,199,89,0.15);  color: #34c759; border: 1px solid rgba(52,199,89,0.3); }
+.btn-txt-off { background: rgba(142,142,147,0.15); color: var(--hint); border: 1px solid rgba(142,142,147,0.3); }
 
 /* SCREENS */
 .screen { display: none; padding: 12px 0; }
@@ -390,15 +392,18 @@ function renderList() {
   c.innerHTML = details.map((d, i) => `
     <div class="detail-row" id="row-${i}" onclick="rowTap(event,${i})">
       <div class="detail-num">${i+1}</div>
-      <div class="detail-size" style="flex:1">
-        <div class="detail-size-text">${d.uzun}×${d.keng}×${d.son}</div>
-        <div class="detail-size-input" id="edit-${i}">
+      <div class="detail-size" style="flex:1;display:flex;align-items:center;gap:4px;flex-wrap:nowrap;">
+        <div class="detail-size-text" style="white-space:nowrap">${d.uzun}×${d.keng}×${d.son}</div>
+        <div class="detail-size-input" id="edit-${i}" style="display:none;align-items:center;gap:2px;">
           <input class="size-field" id="f-uzun-${i}" type="number" inputmode="numeric" value="${d.uzun}">
           <span class="size-sep">×</span>
           <input class="size-field" id="f-keng-${i}" type="number" inputmode="numeric" value="${d.keng}">
           <span class="size-sep">×</span>
           <input class="size-field" id="f-son-${i}" type="number" inputmode="numeric" value="${d.son}">
         </div>
+        <button class="btn-icon ${d.txt===false?'btn-txt-off':'btn-txt-on'}" style="flex-shrink:0;font-size:13px;padding:2px 5px;" title="${d.txt===false?"Yo'lini farqi yo'q":"Yo'lini farqi bor"}" onclick="event.stopPropagation();toggleTxt(${i})">${d.txt===false?'—':'🌲'}</button>
+        <div class="detail-name-text" style="flex:1;color:var(--hint);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.naim||''}</div>
+        <input class="detail-name-input size-field" id="f-naim-${i}" style="display:none;flex:1;min-width:80px;" type="text" placeholder="Nom..." value="${d.naim||''}">
       </div>
       <div class="detail-badges">${kromBadges(d)}</div>
       <div class="row-actions">
@@ -429,6 +434,17 @@ function startEdit(i) {
   const row = document.getElementById("row-"+i);
   if (!row) return;
   row.classList.add("editing");
+  // O'lcham inputlarini ko'rsatish
+  const editDiv = document.getElementById("edit-"+i);
+  if (editDiv) editDiv.style.display = "flex";
+  const sizeText = row.querySelector(".detail-size-text");
+  if (sizeText) sizeText.style.display = "none";
+  // Nom inputni ko'rsatish
+  const naimInput = document.getElementById("f-naim-"+i);
+  const naimText  = row.querySelector(".detail-name-text");
+  if (naimInput) naimInput.style.display = "block";
+  if (naimText)  naimText.style.display  = "none";
+
   ["uzun","keng","son"].forEach(f => {
     const el = document.getElementById(`f-${f}-${i}`);
     if (!el) return;
@@ -439,6 +455,13 @@ function startEdit(i) {
       if (r?.classList.contains("editing") && !r.contains(document.activeElement)) saveEdit(i);
     }, 120));
   });
+  if (naimInput) {
+    naimInput.addEventListener("keydown", e => { if(e.key==="Enter") saveEdit(i); });
+    naimInput.addEventListener("blur", () => setTimeout(() => {
+      const r = document.getElementById("row-"+i);
+      if (r?.classList.contains("editing") && !r.contains(document.activeElement)) saveEdit(i);
+    }, 120));
+  }
   const first = document.getElementById("f-uzun-"+i);
   if (first) { first.focus(); first.select(); }
 }
@@ -448,7 +471,8 @@ function saveEdit(i) {
   const keng = parseInt(document.getElementById("f-keng-"+i)?.value)||0;
   const son  = parseInt(document.getElementById("f-son-"+i)?.value)||1;
   if (uzun<=0||keng<=0||son<=0) { showToast("❌ O'lchamlar noto'g'ri"); return; }
-  details[i].uzun=uzun; details[i].keng=keng; details[i].son=son;
+  const naim = document.getElementById("f-naim-"+i)?.value?.trim() || "";
+  details[i].uzun=uzun; details[i].keng=keng; details[i].son=son; details[i].naim=naim;
   renderList();
 }
 
@@ -457,6 +481,12 @@ function closeAllEdits() {
     const i = parseInt(row.id.replace("row-",""));
     if (!isNaN(i)) saveEdit(i);
   });
+}
+
+function toggleTxt(i) {
+  details[i].txt = details[i].txt === false ? true : false;
+  renderList();
+  showToast(details[i].txt === false ? "🔄 Yo'lini farqi yo'q" : "🌲 Yo'lini farqi bor");
 }
 
 function deleteRow(i) {
@@ -476,7 +506,6 @@ function deleteRow(i) {
   } else {
     if (!confirm(msg)) return;
     details.splice(i, 1); renderList(); showToast("🗑 Qator o'chirildi");
-}
 }
 
 function addRow() {
