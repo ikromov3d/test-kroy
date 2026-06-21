@@ -510,7 +510,7 @@ function deleteRow(i) {
     if (!confirm(msg)) return;
     details.splice(i, 1); renderList(); showToast("🗑 Qator o'chirildi");
 }
-
+}
 function addRow() {
   details.push({uzun:0,keng:0,son:1,uzun1:"",uzun2:"",keng1:"",keng2:""});
   renderList();
@@ -761,3 +761,5 @@ function showToast(msg) {
 </script>
 </body>
 </html>
+
+
