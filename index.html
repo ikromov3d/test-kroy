@@ -498,7 +498,7 @@ function deleteRow(i) {
     }, function(btn) {
       if (btn === "yes") { details.splice(i, 1); renderList(); showToast("🗑 Qator o'chirildi"); }
     });
-  } else {
+  } else {d
     if (!confirm(msg)) return;
     details.splice(i, 1); renderList(); showToast("🗑 Qator o'chirildi");
 }
