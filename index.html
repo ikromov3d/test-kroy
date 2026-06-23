@@ -252,24 +252,7 @@ body {
   transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
 }
 .custom-kb.visible { transform: translateY(0); }
-.kb-recommend-row {
-  display: flex; align-items: center; gap: 8px; padding: 4px 8px 6px;
-  border-bottom: 1px solid var(--sep);
-}
-.kb-recommend-row.hidden { display: none; }
-.kb-recommend-word {
-  flex: 1; font-size: 15px; color: var(--text); text-align: center;
-  padding: 6px 0; cursor: pointer; border-radius: 8px;
-  background: var(--bg); border: 1px solid var(--sep);
-}
-.kb-recommend-word:active { opacity: 0.6; }
-.kb-recommend-refresh {
-  flex: 0 0 36px; height: 36px; border-radius: 8px;
-  background: var(--bg); border: 1px solid var(--sep);
-  color: var(--hint); font-size: 18px; display: flex;
-  align-items: center; justify-content: center; cursor: pointer;
-}
-.kb-recommend-refresh:active { opacity: 0.6; }
+.kb-recommend-row { display: none; }
 .kb-btn.clear { background: rgba(255,69,58,0.12); color: var(--red); font-size: 13px; font-weight: 600; }
 .kb-btn.globe { background: rgba(142,142,147,0.15); color: var(--text); font-size: 18px; }
 .kb-field-tabs {
@@ -312,14 +295,16 @@ body {
   background: var(--bg2); border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   overflow: hidden; display: none;
+  max-height: calc(4 * 50px);
 }
 .naim-dropdown.open { display: block; }
 .naim-drop-item {
   padding: 13px 16px; font-size: 15px; cursor: pointer;
   border-bottom: 1px solid var(--sep); color: var(--text);
+  height: 50px; display: flex; align-items: center;
 }
 .naim-drop-item:last-child { border-bottom: none; }
-.naim-drop-item:active { background: rgba(255,255,255,0.06); }
+.naim-drop-item:active { background: rgba(255,255,255,0.08); }
 .naim-drop-item .naim-match { color: var(--btn); font-weight: 600; }
 </style>
 </head>
@@ -411,7 +396,6 @@ body {
     <div class="kb-tab" id="kb-tab-1">Keng</div>
     <div class="kb-tab" id="kb-tab-2">Son</div>
   </div>
-  <div class="kb-recommend-row hidden" id="kb-recommend-row"></div>
   <div class="kb-display">
     <div class="kb-display-val" id="kb-val">—</div>
     <div class="kb-display-eval" id="kb-eval"></div>
@@ -1022,8 +1006,6 @@ function kbHandleKey(key) {
       naimEl.value += ch;
       naimEl.dispatchEvent(new Event("input"));
     }
-    _recIdx = 0;
-    kbRecommendRender();
     return;
   }
   kbTap(key);
@@ -1131,8 +1113,6 @@ function kbDel() {
       naimEl.value = naimEl.value.slice(0, -1);
       naimEl.dispatchEvent(new Event("input"));
     }
-    _recIdx = 0;
-    kbRecommendRender();
     return;
   }
   kbCurrentVal = kbCurrentVal.slice(0, -1);
@@ -1406,15 +1386,19 @@ let _naimActiveInput = null;
 
 function naimDropdownShow(input) {
   _naimActiveInput = input;
-  const val = input.value;
+  const val = input.value.trim();
   const drop = document.getElementById("naim-dropdown");
   const filtered = val
-    ? NAIM_LIST.filter(n => n.toLowerCase().includes(val.toLowerCase()))
+    ? NAIM_LIST.filter(n => n.toLowerCase().startsWith(val.toLowerCase()))
     : NAIM_LIST;
   if (!filtered.length) { drop.classList.remove("open"); return; }
-  const rect = input.getBoundingClientRect();
-  drop.style.top = (rect.bottom + 6) + "px";
-  drop.innerHTML = filtered.map(n => {
+  const shown = filtered.slice(0, 4);
+  const kb = document.getElementById("custom-kb");
+  const kbTop = kb && kb.classList.contains("visible") ? kb.getBoundingClientRect().top : window.innerHeight;
+  const dropH = shown.length * 50;
+  drop.style.top = (kbTop - dropH - 8) + "px";
+  drop.style.bottom = "auto";
+  drop.innerHTML = shown.map(n => {
     if (!val) return `<div class="naim-drop-item" onmousedown="naimPick('${n}')" ontouchstart="naimPick('${n}')">${n}</div>`;
     const idx = n.toLowerCase().indexOf(val.toLowerCase());
     const hi = n.slice(0, idx)
@@ -1426,11 +1410,20 @@ function naimDropdownShow(input) {
 }
 
 function naimPick(val) {
-  if (_naimActiveInput) {
-    _naimActiveInput.value = val;
-    _naimActiveInput.dispatchEvent(new Event("input"));
-  }
   document.getElementById("naim-dropdown").classList.remove("open");
+  if (!_naimActiveInput) return;
+  _naimActiveInput.value = val;
+  const rowEl = _naimActiveInput.closest(".detail-row");
+  if (!rowEl) return;
+  const i = parseInt(rowEl.id.replace("row-", ""));
+  if (!isNaN(i)) {
+    saveEdit(i);
+    kbClose();
+    setTimeout(() => {
+      if (i + 1 < details.length) startEdit(i + 1);
+      else addRow();
+    }, 50);
+  }
 }
 
 function naimDropdownClose() {
@@ -1443,55 +1436,9 @@ document.addEventListener("click", e => {
   }
 });
 
-let _recIdx = 0;
-
-function kbRecommendShow() {
-  _recIdx = 0;
-  kbRecommendRender();
-  document.getElementById("kb-recommend-row").classList.remove("hidden");
-}
-
-function kbRecommendFiltered() {
-  const naimEl = kbActiveRow !== -1 ? document.getElementById("f-naim-" + kbActiveRow) : null;
-  const val = naimEl ? naimEl.value.trim().toLowerCase() : "";
-  return val ? NAIM_LIST.filter(n => n.toLowerCase().startsWith(val)) : NAIM_LIST;
-}
-
-function kbRecommendRender() {
-  const list = kbRecommendFiltered();
-  const row = document.getElementById("kb-recommend-row");
-  if (!list.length) { row.innerHTML = `<div class="kb-recommend-refresh" onmousedown="kbRecommendNext()" ontouchstart="kbRecommendNext()">↻</div><div class="kb-recommend-word" style="color:var(--hint);pointer-events:none;">—</div>`; return; }
-  const n = list[_recIdx % list.length];
-  row.innerHTML =
-    `<div class="kb-recommend-refresh" onmousedown="kbRecommendNext()" ontouchstart="kbRecommendNext()">↻</div>` +
-    `<div class="kb-recommend-word" onmousedown="kbRecommendPick('${n}')" ontouchstart="kbRecommendPick('${n}')">${n}</div>`;
-}
-
-function kbRecommendNext() {
-  const list = kbRecommendFiltered();
-  if (!list.length) return;
-  _recIdx = (_recIdx + 1) % list.length;
-  kbRecommendRender();
-}
-
-function kbRecommendHide() {
-  const row = document.getElementById("kb-recommend-row");
-  row.classList.add("hidden");
-  row.innerHTML = "";
-}
-
-function kbRecommendPick(val) {
-  if (kbActiveRow === -1) return;
-  const row = kbActiveRow;
-  const naimEl = document.getElementById("f-naim-" + row);
-  if (naimEl) naimEl.value = val;
-  saveEdit(row);
-  kbClose();
-  setTimeout(() => {
-    if (row + 1 < details.length) startEdit(row + 1);
-    else addRow();
-  }, 50);
-}
+function kbRecommendShow() {}
+function kbRecommendHide() {}
+function kbRecommendRender() {}
 </script>
 </body>
 </html>
