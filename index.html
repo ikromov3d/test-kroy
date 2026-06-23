@@ -78,13 +78,14 @@ body {
   width: 52px; background: var(--bg); border: 1.5px solid var(--btn);
   border-radius: 6px; color: var(--text); font-size: 14px;
   text-align: center; padding: 4px 2px; outline: none;
-  transition: width 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  transition: width 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
   min-width: 52px;
 }
 .size-field.kb-active {
-  width: 120px;
-  border-color: var(--green);
-  background: rgba(48,209,88,0.08);
+  width: 120px !important;
+  border-color: var(--green) !important;
+  background: rgba(48,209,88,0.12) !important;
+  box-shadow: 0 0 0 2px rgba(48,209,88,0.25);
 }
 .size-sep { color: var(--hint); font-size: 13px; }
 .detail-badges { display: flex; gap: 4px; flex-shrink: 0; }
@@ -233,6 +234,19 @@ body {
   transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
 }
 .custom-kb.visible { transform: translateY(0); }
+.kb-field-tabs {
+  display: flex; gap: 6px; margin-bottom: 6px;
+}
+.kb-tab {
+  flex: 1; height: 34px; border-radius: 8px;
+  background: var(--bg); color: var(--hint);
+  font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s;
+}
+.kb-tab.active {
+  background: var(--green); color: #000;
+}
 .kb-display {
   background: var(--bg); border-radius: 10px; padding: 8px 14px;
   margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
@@ -335,8 +349,12 @@ body {
 
 <!-- CUSTOM KEYBOARD -->
 <div class="custom-kb" id="custom-kb">
+  <div class="kb-field-tabs">
+    <div class="kb-tab" id="kb-tab-0" onclick="kbSwitchField(0)">Uzun</div>
+    <div class="kb-tab" id="kb-tab-1" onclick="kbSwitchField(1)">Keng</div>
+    <div class="kb-tab" id="kb-tab-2" onclick="kbSwitchField(2)">Son</div>
+  </div>
   <div class="kb-display">
-    <div class="kb-display-label" id="kb-label">Uzun</div>
     <div class="kb-display-val" id="kb-val">—</div>
     <div class="kb-display-eval" id="kb-eval"></div>
   </div>
@@ -880,7 +898,6 @@ function kbClose() {
 
 function kbRefreshDisplay() {
   const val = kbCurrentVal;
-  document.getElementById("kb-label").textContent = KB_LABELS[kbActiveField];
   document.getElementById("kb-val").textContent = val || "0";
   const res = evalMath(val);
   const orig = parseFloat(val);
@@ -888,11 +905,31 @@ function kbRefreshDisplay() {
     (res > 0 && res !== orig && val.match(/[\+\-\*\/]/)) ? "= " + res : "";
   const nextBtn = document.getElementById("kb-next-btn");
   nextBtn.textContent = kbActiveField < KB_FIELDS.length - 1 ? "→" : "✓ Nom";
-  // inputga ham ko'rsatamiz va kb-active class
+  // Tabs highlight
+  [0,1,2].forEach(fi => {
+    const t = document.getElementById(`kb-tab-${fi}`);
+    if (t) t.classList.toggle("active", fi === kbActiveField);
+  });
+  // Input field highlight
   document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
   const f = KB_FIELDS[kbActiveField];
   const el = document.getElementById(`f-${f}-${kbActiveRow}`);
-  if (el) { el.value = val; el.classList.add("kb-active"); }
+  if (el) { el.value = val || ""; el.classList.add("kb-active"); }
+}
+
+function kbSwitchField(fieldIdx) {
+  kbConfirmField();
+  kbActiveField = fieldIdx;
+  const f = KB_FIELDS[fieldIdx];
+  const el = document.getElementById(`f-${f}-${kbActiveRow}`);
+  const raw = el ? el.value : "";
+  const stored = details[kbActiveRow] ? details[kbActiveRow][f] : 0;
+  const defaultVals = { uzun: 0, keng: 0, son: 1 };
+  const isDefault = stored === defaultVals[f] && String(stored) === raw;
+  kbCurrentVal = isDefault ? "" : raw;
+  document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
+  if (el) el.classList.add("kb-active");
+  kbRefreshDisplay();
 }
 
 function kbTap(ch) {
@@ -918,16 +955,26 @@ function kbConfirmField() {
   const f = KB_FIELDS[kbActiveField];
   const el = document.getElementById(`f-${f}-${kbActiveRow}`);
   if (el && res > 0) el.value = res;
-  kbCurrentVal = res > 0 ? String(res) : kbCurrentVal;
+  // kbCurrentVal ni o'zgartirmaymiz — keyingi field uchun alohida o'qiladi
 }
 
 function kbNext() {
   kbConfirmField();
   if (kbActiveField < KB_FIELDS.length - 1) {
     kbActiveField++;
+    // Keyingi fieldning qiymatini yangi o'qiymiz
+    const f = KB_FIELDS[kbActiveField];
+    const el = document.getElementById(`f-${f}-${kbActiveRow}`);
+    const raw = el ? el.value : "";
+    const stored = details[kbActiveRow] ? details[kbActiveRow][f] : 0;
+    const defaultVals = { uzun: 0, keng: 0, son: 1 };
+    const isDefault = stored === defaultVals[f] && String(stored) === raw;
+    kbCurrentVal = isDefault ? "" : raw;
+    // Highlight yangilash
+    document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
+    if (el) el.classList.add("kb-active");
     kbRefreshDisplay();
   } else {
-    // Son tugadi → nom fieldiga o'tish
     const savedRow = kbActiveRow;
     kbClose();
     setTimeout(() => {
