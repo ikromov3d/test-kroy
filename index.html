@@ -253,17 +253,23 @@ body {
 }
 .custom-kb.visible { transform: translateY(0); }
 .kb-recommend-row {
-  display: flex; gap: 6px; overflow-x: auto; padding: 0 0 6px;
-  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  display: flex; align-items: center; gap: 8px; padding: 4px 8px 6px;
+  border-bottom: 1px solid var(--sep);
 }
-.kb-recommend-row::-webkit-scrollbar { display: none; }
-.kb-recommend-chip {
-  flex-shrink: 0; padding: 5px 12px; border-radius: 20px; font-size: 13px;
-  background: var(--bg); color: var(--text); border: 1px solid var(--sep);
-  cursor: pointer; white-space: nowrap; line-height: 1.4;
-}
-.kb-recommend-chip:active { opacity: 0.6; }
 .kb-recommend-row.hidden { display: none; }
+.kb-recommend-word {
+  flex: 1; font-size: 15px; color: var(--text); text-align: center;
+  padding: 6px 0; cursor: pointer; border-radius: 8px;
+  background: var(--bg); border: 1px solid var(--sep);
+}
+.kb-recommend-word:active { opacity: 0.6; }
+.kb-recommend-refresh {
+  flex: 0 0 36px; height: 36px; border-radius: 8px;
+  background: var(--bg); border: 1px solid var(--sep);
+  color: var(--hint); font-size: 18px; display: flex;
+  align-items: center; justify-content: center; cursor: pointer;
+}
+.kb-recommend-refresh:active { opacity: 0.6; }
 .kb-btn.clear { background: rgba(255,69,58,0.12); color: var(--red); font-size: 13px; font-weight: 600; }
 .kb-btn.globe { background: rgba(142,142,147,0.15); color: var(--text); font-size: 18px; }
 .kb-field-tabs {
@@ -1424,12 +1430,24 @@ document.addEventListener("click", e => {
   }
 });
 
+let _recIdx = 0;
+
 function kbRecommendShow() {
-  const row = document.getElementById("kb-recommend-row");
-  row.classList.remove("hidden");
-  row.innerHTML = NAIM_LIST.map(n =>
-    `<div class="kb-recommend-chip" onmousedown="kbRecommendPick('${n}')" ontouchstart="kbRecommendPick('${n}')">${n}</div>`
-  ).join("");
+  _recIdx = 0;
+  kbRecommendRender();
+  document.getElementById("kb-recommend-row").classList.remove("hidden");
+}
+
+function kbRecommendRender() {
+  const n = NAIM_LIST[_recIdx % NAIM_LIST.length];
+  document.getElementById("kb-recommend-row").innerHTML =
+    `<div class="kb-recommend-refresh" onmousedown="kbRecommendNext()" ontouchstart="kbRecommendNext()">↻</div>` +
+    `<div class="kb-recommend-word" onmousedown="kbRecommendPick('${n}')" ontouchstart="kbRecommendPick('${n}')">${n}</div>`;
+}
+
+function kbRecommendNext() {
+  _recIdx = (_recIdx + 1) % NAIM_LIST.length;
+  kbRecommendRender();
 }
 
 function kbRecommendHide() {
@@ -1446,6 +1464,7 @@ function kbRecommendPick(val) {
       naimEl.dispatchEvent(new Event("input"));
     }
   }
+  kbRecommendNext();
 }
 </script>
 </body>
