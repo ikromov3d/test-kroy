@@ -484,11 +484,11 @@ function renderList() {
       <div class="detail-size" style="flex:1;display:flex;align-items:center;gap:4px;flex-wrap:nowrap;">
         <div class="detail-size-text" style="white-space:nowrap">${d.uzun}×${d.keng}×${d.son}</div>
         <div class="detail-size-input" id="edit-${i}" style="display:none;align-items:center;gap:2px;">
-          <input class="size-field" id="f-uzun-${i}" type="text" inputmode="text" value="${d.uzun}">
+          <input class="size-field" id="f-uzun-${i}" type="text" inputmode="none" readonly value="${d.uzun}" ontouchstart="event.preventDefault();kbOpen(${i},0)" onclick="kbOpen(${i},0)">
           <span class="size-sep">×</span>
-          <input class="size-field" id="f-keng-${i}" type="text" inputmode="text" value="${d.keng}">
+          <input class="size-field" id="f-keng-${i}" type="text" inputmode="none" readonly value="${d.keng}" ontouchstart="event.preventDefault();kbOpen(${i},1)" onclick="kbOpen(${i},1)">
           <span class="size-sep">×</span>
-          <input class="size-field" id="f-son-${i}" type="text" inputmode="text" value="${d.son}">
+          <input class="size-field" id="f-son-${i}" type="text" inputmode="none" readonly value="${d.son}" ontouchstart="event.preventDefault();kbOpen(${i},2)" onclick="kbOpen(${i},2)">
         </div>
 
         <div class="detail-name-text" style="flex:1;color:#ff3b30;font-size:15px;font-weight:600;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.naim||''}</div>
@@ -532,24 +532,7 @@ function startEdit(i) {
   if (naimInput) naimInput.style.display = "block";
   if (naimText)  naimText.style.display  = "none";
 
-  // Size fieldlarga bosganda custom keyboard ochilsin, tizim keyboard bloklansin
-  ["uzun","keng","son"].forEach((f, fi) => {
-    const el = document.getElementById(`f-${f}-${i}`);
-    if (!el) return;
-    el.readOnly = true; // tizim keyboard bloklanadi
-    el.addEventListener("click", (e) => {
-      e.preventDefault();
-      kbOpen(i, fi);
-    });
-    el.addEventListener("focus", (e) => {
-      e.preventDefault();
-      el.blur();
-      kbOpen(i, fi);
-    });
-  });
-
   if (naimInput) {
-    naimInput.readOnly = false;
     naimInput.addEventListener("keydown", e => {
       if(e.key==="Enter") {
         e.preventDefault();
@@ -568,7 +551,6 @@ function startEdit(i) {
     }, 150));
   }
 
-  // Custom keyboard bilan boshlash
   kbOpen(i, 0);
   setTimeout(() => row.scrollIntoView({behavior:"smooth", block:"center"}), 60);
 }
@@ -862,14 +844,18 @@ function sendData() {
 const KB_FIELDS = ["uzun","keng","son"];
 const KB_LABELS = ["Uzun (mm)", "Keng (mm)", "Son"];
 let kbActiveRow = -1;
-let kbActiveField = 0; // 0=uzun,1=keng,2=son
+let kbActiveField = 0;
+let kbCurrentVal = ""; // joriy kiritilayotgan qiymat
 
 function kbOpen(rowIdx, fieldIdx) {
   kbActiveRow = rowIdx;
   kbActiveField = fieldIdx;
+  // Joriy fieldning qiymatini olish
+  const f = KB_FIELDS[fieldIdx];
+  const el = document.getElementById(`f-${f}-${rowIdx}`);
+  kbCurrentVal = el ? (el.value || "") : "";
   kbRefreshDisplay();
   document.getElementById("custom-kb").classList.add("visible");
-  // bottom-bar ni yuqoriga siljitish
   document.querySelector(".bottom-bar").style.bottom =
     document.getElementById("custom-kb").offsetHeight + "px";
 }
@@ -877,62 +863,51 @@ function kbOpen(rowIdx, fieldIdx) {
 function kbClose() {
   if (kbActiveRow >= 0) kbConfirmField();
   kbActiveRow = -1;
+  kbCurrentVal = "";
   document.getElementById("custom-kb").classList.remove("visible");
   document.querySelector(".bottom-bar").style.bottom = "";
 }
 
 function kbRefreshDisplay() {
-  const f = KB_FIELDS[kbActiveField];
-  const el = document.getElementById(`f-${f}-${kbActiveRow}`);
-  const val = el ? el.value : "";
+  const val = kbCurrentVal;
   document.getElementById("kb-label").textContent = KB_LABELS[kbActiveField];
   document.getElementById("kb-val").textContent = val || "0";
-  // Preview hisoblash
   const res = evalMath(val);
   const orig = parseFloat(val);
   document.getElementById("kb-eval").textContent =
     (res > 0 && res !== orig && val.match(/[\+\-\*\/]/)) ? "= " + res : "";
-  // Next tugmasi
   const nextBtn = document.getElementById("kb-next-btn");
-  if (kbActiveField < KB_FIELDS.length - 1) {
-    nextBtn.textContent = "→";
-  } else {
-    nextBtn.textContent = "✓ Nom";
-  }
+  nextBtn.textContent = kbActiveField < KB_FIELDS.length - 1 ? "→" : "✓ Nom";
+  // inputga ham ko'rsatamiz
+  const f = KB_FIELDS[kbActiveField];
+  const el = document.getElementById(`f-${f}-${kbActiveRow}`);
+  if (el) el.value = val;
 }
 
 function kbTap(ch) {
-  const f = KB_FIELDS[kbActiveField];
-  const el = document.getElementById(`f-${f}-${kbActiveRow}`);
-  if (!el) return;
-  // Qavsni aqlli qo'shish
   if (ch === "(") {
-    const cur = el.value;
-    if (cur === "" || cur.match(/[\+\-\*\/]$/)) {
-      el.value = cur + "(";
+    if (kbCurrentVal === "" || kbCurrentVal.match(/[\+\-\*\/]$/)) {
+      kbCurrentVal += "(";
     } else {
-      el.value = cur + ")";
+      kbCurrentVal += ")";
     }
   } else {
-    el.value += ch;
+    kbCurrentVal += ch;
   }
   kbRefreshDisplay();
 }
 
 function kbDel() {
-  const f = KB_FIELDS[kbActiveField];
-  const el = document.getElementById(`f-${f}-${kbActiveRow}`);
-  if (!el) return;
-  el.value = el.value.slice(0, -1);
+  kbCurrentVal = kbCurrentVal.slice(0, -1);
   kbRefreshDisplay();
 }
 
 function kbConfirmField() {
+  const res = evalMath(kbCurrentVal);
   const f = KB_FIELDS[kbActiveField];
   const el = document.getElementById(`f-${f}-${kbActiveRow}`);
-  if (!el) return;
-  const res = evalMath(el.value);
-  if (res > 0) el.value = res;
+  if (el && res > 0) el.value = res;
+  kbCurrentVal = res > 0 ? String(res) : kbCurrentVal;
 }
 
 function kbNext() {
