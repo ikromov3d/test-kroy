@@ -238,7 +238,7 @@ body {
 .kb-display-label { font-size: 12px; color: var(--hint); min-width: 36px; }
 .kb-display-val { flex: 1; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
 .kb-display-eval { font-size: 13px; color: var(--green); min-width: 60px; text-align: right; }
-.kb-rows { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.kb-rows { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
 .kb-btn {
   height: 52px; border: none; border-radius: 10px;
   background: var(--bg); color: var(--text);
@@ -339,7 +339,8 @@ body {
     <div class="kb-display-eval" id="kb-eval"></div>
   </div>
   <div class="kb-rows">
-    <button class="kb-btn op" ontouchstart="" onclick="kbTap('(')">( )</button>
+    <button class="kb-btn op" ontouchstart="" onclick="kbTap('(')" >(</button>
+    <button class="kb-btn op" ontouchstart="" onclick="kbTap(')')" >)</button>
     <button class="kb-btn op" ontouchstart="" onclick="kbTap('/')" >÷</button>
     <button class="kb-btn op" ontouchstart="" onclick="kbTap('*')" >×</button>
     <button class="kb-btn del" ontouchstart="" onclick="kbDel()">⌫</button>
@@ -347,21 +348,21 @@ body {
     <button class="kb-btn" ontouchstart="" onclick="kbTap('7')">7</button>
     <button class="kb-btn" ontouchstart="" onclick="kbTap('8')">8</button>
     <button class="kb-btn" ontouchstart="" onclick="kbTap('9')">9</button>
-    <button class="kb-btn op" ontouchstart="" onclick="kbTap('-')">−</button>
+    <button class="kb-btn op" ontouchstart="" onclick="kbTap('-')" style="grid-column:span 2">−</button>
 
     <button class="kb-btn" ontouchstart="" onclick="kbTap('4')">4</button>
     <button class="kb-btn" ontouchstart="" onclick="kbTap('5')">5</button>
     <button class="kb-btn" ontouchstart="" onclick="kbTap('6')">6</button>
-    <button class="kb-btn op" ontouchstart="" onclick="kbTap('+')">+</button>
+    <button class="kb-btn op" ontouchstart="" onclick="kbTap('+')" style="grid-column:span 2">+</button>
 
     <button class="kb-btn" ontouchstart="" onclick="kbTap('1')">1</button>
     <button class="kb-btn" ontouchstart="" onclick="kbTap('2')">2</button>
     <button class="kb-btn" ontouchstart="" onclick="kbTap('3')">3</button>
-    <button class="kb-btn next" ontouchstart="" onclick="kbNext()" id="kb-next-btn">→</button>
+    <button class="kb-btn next" ontouchstart="" onclick="kbNext()" id="kb-next-btn" style="grid-column:span 2">→</button>
 
     <button class="kb-btn" ontouchstart="" onclick="kbTap('0')" style="grid-column:span 2">0</button>
     <button class="kb-btn" ontouchstart="" onclick="kbTap('.')">.</button>
-    <button class="kb-btn ok" ontouchstart="" onclick="kbOk()">OK</button>
+    <button class="kb-btn ok" ontouchstart="" onclick="kbOk()" style="grid-column:span 2">OK</button>
   </div>
 </div>
 
@@ -850,10 +851,11 @@ let kbCurrentVal = ""; // joriy kiritilayotgan qiymat
 function kbOpen(rowIdx, fieldIdx) {
   kbActiveRow = rowIdx;
   kbActiveField = fieldIdx;
-  // Joriy fieldning qiymatini olish
   const f = KB_FIELDS[fieldIdx];
   const el = document.getElementById(`f-${f}-${rowIdx}`);
-  kbCurrentVal = el ? (el.value || "") : "";
+  const raw = el ? el.value : "";
+  // 0 bo'lsa bo'sh deb qabul qilamiz
+  kbCurrentVal = (raw === "0" || raw === "") ? "" : raw;
   kbRefreshDisplay();
   document.getElementById("custom-kb").classList.add("visible");
   document.querySelector(".bottom-bar").style.bottom =
