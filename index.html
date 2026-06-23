@@ -1021,9 +1021,9 @@ function kbHandleKey(key) {
     if (naimEl) {
       naimEl.value += ch;
       naimEl.dispatchEvent(new Event("input"));
-      const row = document.getElementById("kb-display") || document.getElementById("kb-val");
-      if (row) row.textContent = naimEl.value;
     }
+    _recIdx = 0;
+    kbRecommendRender();
     return;
   }
   kbTap(key);
@@ -1131,6 +1131,8 @@ function kbDel() {
       naimEl.value = naimEl.value.slice(0, -1);
       naimEl.dispatchEvent(new Event("input"));
     }
+    _recIdx = 0;
+    kbRecommendRender();
     return;
   }
   kbCurrentVal = kbCurrentVal.slice(0, -1);
@@ -1288,16 +1290,27 @@ function kbBindAlpha() {
 }
 
 function kbOk() {
+  const row = kbActiveRow;
   if (_kbIsNaimMode) {
-    const row = kbActiveRow;
+    const naimEl = document.getElementById("f-naim-" + row);
+    const naim = naimEl ? naimEl.value.trim() : "";
     kbClose();
-    if (row >= 0) saveEdit(row);
+    if (row >= 0) {
+      const uzun = evalMath(document.getElementById("f-uzun-"+row)?.value);
+      const keng = evalMath(document.getElementById("f-keng-"+row)?.value);
+      if (uzun <= 0 || keng <= 0) { details.splice(row, 1); renderList(); return; }
+      saveEdit(row);
+    }
     return;
   }
-  const row = kbActiveRow;
   kbConfirmField();
   kbClose();
-  if (row >= 0) saveEdit(row);
+  if (row >= 0) {
+    const uzun = evalMath(document.getElementById("f-uzun-"+row)?.value);
+    const keng = evalMath(document.getElementById("f-keng-"+row)?.value);
+    if (uzun <= 0 || keng <= 0) { details.splice(row, 1); renderList(); return; }
+    saveEdit(row);
+  }
 }
 
 
@@ -1438,15 +1451,26 @@ function kbRecommendShow() {
   document.getElementById("kb-recommend-row").classList.remove("hidden");
 }
 
+function kbRecommendFiltered() {
+  const naimEl = kbActiveRow !== -1 ? document.getElementById("f-naim-" + kbActiveRow) : null;
+  const val = naimEl ? naimEl.value.trim().toLowerCase() : "";
+  return val ? NAIM_LIST.filter(n => n.toLowerCase().startsWith(val)) : NAIM_LIST;
+}
+
 function kbRecommendRender() {
-  const n = NAIM_LIST[_recIdx % NAIM_LIST.length];
-  document.getElementById("kb-recommend-row").innerHTML =
+  const list = kbRecommendFiltered();
+  const row = document.getElementById("kb-recommend-row");
+  if (!list.length) { row.innerHTML = `<div class="kb-recommend-refresh" onmousedown="kbRecommendNext()" ontouchstart="kbRecommendNext()">↻</div><div class="kb-recommend-word" style="color:var(--hint);pointer-events:none;">—</div>`; return; }
+  const n = list[_recIdx % list.length];
+  row.innerHTML =
     `<div class="kb-recommend-refresh" onmousedown="kbRecommendNext()" ontouchstart="kbRecommendNext()">↻</div>` +
     `<div class="kb-recommend-word" onmousedown="kbRecommendPick('${n}')" ontouchstart="kbRecommendPick('${n}')">${n}</div>`;
 }
 
 function kbRecommendNext() {
-  _recIdx = (_recIdx + 1) % NAIM_LIST.length;
+  const list = kbRecommendFiltered();
+  if (!list.length) return;
+  _recIdx = (_recIdx + 1) % list.length;
   kbRecommendRender();
 }
 
@@ -1457,14 +1481,16 @@ function kbRecommendHide() {
 }
 
 function kbRecommendPick(val) {
-  if (kbActiveRow !== -1) {
-    const naimEl = document.getElementById("f-naim-" + kbActiveRow);
-    if (naimEl) {
-      naimEl.value = val;
-      naimEl.dispatchEvent(new Event("input"));
-    }
-  }
-  kbRecommendNext();
+  if (kbActiveRow === -1) return;
+  const row = kbActiveRow;
+  const naimEl = document.getElementById("f-naim-" + row);
+  if (naimEl) naimEl.value = val;
+  saveEdit(row);
+  kbClose();
+  setTimeout(() => {
+    if (row + 1 < details.length) startEdit(row + 1);
+    else addRow();
+  }, 50);
 }
 </script>
 </body>
