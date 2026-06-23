@@ -290,28 +290,34 @@ body {
 .kb-btn.del { background: rgba(255,69,58,0.12); color: var(--red); font-size: 18px; }
 .kb-btn.ok  { background: var(--btn); color: var(--btn-text); font-size: 16px; font-weight: 700; }
 .kb-btn.next { background: rgba(10,132,255,0.12); color: var(--blue); font-size: 15px; font-weight: 600; }
-.naim-dropdown {
-  position: fixed; left: 12px; right: 12px; z-index: 9999;
-  background: var(--bg2); border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  overflow-y: auto; overflow-x: hidden; display: none;
-  max-height: calc(4 * 50px);
-  -webkit-overflow-scrolling: touch;
+.naim-chips-kb {
+  display: none; flex-direction: column; gap: 4px;
+  padding: 6px 8px 2px; border-bottom: 1px solid var(--sep);
 }
-.naim-dropdown.open { display: block; }
-.naim-drop-item {
-  padding: 0 16px; font-size: 15px; cursor: pointer;
-  border-bottom: 1px solid var(--sep); color: var(--text);
-  height: 50px; display: flex; align-items: center;
+.naim-chips-kb.has-chips { display: flex; }
+.naim-chip-row {
+  display: flex; gap: 5px;
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  -webkit-tap-highlight-color: transparent;
 }
-.naim-drop-item:last-child { border-bottom: none; }
-.naim-drop-item:active { background: rgba(255,255,255,0.08); }
-.naim-drop-item .naim-match { color: var(--btn); font-weight: 600; }
+.naim-chip-row::-webkit-scrollbar { display: none; }
+.naim-chip {
+  flex: 0 0 auto;
+  height: 34px; padding: 0 14px;
+  border-radius: 8px; font-size: 14px;
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--sep); cursor: pointer;
+  display: flex; align-items: center; white-space: nowrap;
+  touch-action: manipulation;
+}
+.naim-chip:active { opacity: 0.55; }
+.naim-chip .naim-match { color: var(--btn); font-weight: 600; }
 </style>
 </head>
 <body>
 
-<div class="naim-dropdown" id="naim-dropdown"></div>
+
 
 <div class="header">
   <div class="header-title">✂️ Kroy Editor</div>
@@ -392,6 +398,7 @@ body {
 
 <!-- CUSTOM KEYBOARD -->
 <div class="custom-kb" id="custom-kb">
+  <div class="naim-chips-kb" id="naim-chips-kb"></div>
   <div class="kb-field-tabs" id="kb-field-tabs">
     <div class="kb-tab" id="kb-tab-0">Uzun</div>
     <div class="kb-tab" id="kb-tab-1">Keng</div>
@@ -583,7 +590,7 @@ function renderList() {
         </div>
 
         <div class="detail-name-text" style="flex:1;color:#ff3b30;font-size:15px;font-weight:600;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.naim||''}</div>
-        <input class="detail-name-input size-field" id="f-naim-${i}" style="display:none;flex:1;min-width:80px;" type="text" placeholder="Nom..." value="${d.naim||''}">
+        <input class="detail-name-input size-field" id="f-naim-${i}" style="display:none;flex:1;min-width:80px;" type="text" placeholder="Nom..." value="${d.naim||''}" inputmode="none" tabindex="-1" autocomplete="off" autocorrect="off" spellcheck="false" readonly>
       </div>
       <div class="detail-badges">${kromBadges(d)}</div>
       <div class="row-actions">
@@ -654,10 +661,9 @@ function startEdit(i) {
         if (!document.getElementById("custom-kb").classList.contains("visible")) saveEdit(i);
       }
     }, 150));
+    naimInput.addEventListener("touchstart", e => { e.preventDefault(); kbSetNaimMode(); naimDropdownShow(naimInput); }, { passive: false });
+    naimInput.addEventListener("mousedown", e => { if (!e.isTrusted) return; kbSetNaimMode(); naimDropdownShow(naimInput); });
     naimInput.addEventListener("input", () => naimDropdownShow(naimInput));
-    naimInput.addEventListener("focus", () => {
-      naimDropdownShow(naimInput);
-    });
   }
 
   kbOpen(i, 0);
@@ -955,6 +961,21 @@ let kbActiveRow = -1;
 let kbActiveField = 0;
 let kbCurrentVal = "";
 
+document.addEventListener("keydown", function(e) {
+  if (!document.getElementById("custom-kb").classList.contains("visible")) return;
+  if (_kbIsNaimMode) {
+    if (e.key === "Backspace") { e.preventDefault(); kbHandleKey("DEL"); return; }
+    if (e.key === "Enter")     { e.preventDefault(); kbHandleKey("OK");  return; }
+    if (e.key.length === 1)    { e.preventDefault(); kbHandleKey("NAIM:" + e.key); return; }
+    return;
+  }
+  const num = e.key.length === 1 && "0123456789.+-*/()".includes(e.key);
+  if (num)               { e.preventDefault(); kbHandleKey(e.key); return; }
+  if (e.key === "Backspace") { e.preventDefault(); kbHandleKey("DEL");  return; }
+  if (e.key === "Enter")     { e.preventDefault(); kbHandleKey("OK");   return; }
+  if (e.key === "Tab")       { e.preventDefault(); kbHandleKey("NEXT"); return; }
+});
+
 // Touch/click ikki marta ishlamasligi uchun unified handler
 function kbBindEvents() {
   // Tugmalar
@@ -1015,10 +1036,7 @@ function kbHandleKey(key) {
   if (key.startsWith("NAIM:")) {
     const ch = key.slice(5);
     const naimEl = document.getElementById("f-naim-" + kbActiveRow);
-    if (naimEl) {
-      naimEl.value += ch;
-      naimEl.dispatchEvent(new Event("input"));
-    }
+    if (naimEl) { naimEl.value += ch; _naimActiveInput = naimEl; naimChipsUpdate(); }
     return;
   }
   kbTap(key);
@@ -1054,7 +1072,6 @@ function kbOpen(rowIdx, fieldIdx) {
   document.getElementById("custom-kb").classList.add("visible");
   document.querySelector(".bottom-bar").style.bottom =
     document.getElementById("custom-kb").offsetHeight + "px";
-  kbRecommendHide();
   if (_kbIsNaimMode) kbSetNumMode();
 }
 
@@ -1065,9 +1082,9 @@ function kbClose() {
   document.querySelectorAll(".size-field.kb-active, .detail-name-input.kb-active").forEach(e => e.classList.remove("kb-active"));
   document.getElementById("custom-kb").classList.remove("visible");
   document.querySelector(".bottom-bar").style.bottom = "";
-  kbRecommendHide();
   if (_kbIsNaimMode) kbSetNumMode();
   document.getElementById("kb-alpha").style.display = "none";
+  naimDropdownClose();
 }
 
 function kbRefreshDisplay() {
@@ -1122,10 +1139,7 @@ function kbTap(ch) {
 function kbDel() {
   if (_kbIsNaimMode) {
     const naimEl = document.getElementById("f-naim-" + kbActiveRow);
-    if (naimEl) {
-      naimEl.value = naimEl.value.slice(0, -1);
-      naimEl.dispatchEvent(new Event("input"));
-    }
+    if (naimEl) { naimEl.value = naimEl.value.slice(0, -1); _naimActiveInput = naimEl; naimChipsUpdate(); }
     return;
   }
   kbCurrentVal = kbCurrentVal.slice(0, -1);
@@ -1154,11 +1168,11 @@ function kbNext() {
     document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
     if (el) el.classList.add("kb-active");
     kbRefreshDisplay();
-    kbRecommendHide();
     kbSetNumMode();
   } else {
     kbSetNaimMode();
-    kbRecommendShow();
+    const naimEl2 = kbActiveRow !== -1 ? document.getElementById("f-naim-" + kbActiveRow) : null;
+    if (naimEl2) naimDropdownShow(naimEl2);
   }
 }
 
@@ -1169,6 +1183,8 @@ function kbSetNumMode() {
   _kbIsNaimMode = false;
   document.getElementById("kb-rows").style.display = "grid";
   document.getElementById("kb-alpha").style.display = "none";
+  naimDropdownClose();
+  document.querySelectorAll(".detail-name-input").forEach(el => el.setAttribute("readonly", ""));
   document.getElementById("kb-rows").innerHTML = `
     <button class="kb-btn op" data-kb="(">(</button>
     <button class="kb-btn op" data-kb=")">)</button>
@@ -1197,9 +1213,13 @@ function kbSetNumMode() {
 
 function kbSetNaimMode() {
   _kbIsNaimMode = true;
-  document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
+  document.querySelectorAll(".size-field.kb-active, .detail-name-input.kb-active").forEach(e => e.classList.remove("kb-active"));
   const naimEl = kbActiveRow !== -1 ? document.getElementById("f-naim-" + kbActiveRow) : null;
-  if (naimEl) naimEl.classList.add("kb-active");
+  if (naimEl) {
+    naimEl.removeAttribute("readonly");
+    naimEl.classList.add("kb-active");
+    _naimActiveInput = naimEl;
+  }
   kbRenderAlpha("en");
 }
 
@@ -1259,6 +1279,7 @@ function kbRenderAlpha(lang) {
   alphaEl.style.display = "block";
   alphaEl.innerHTML = html;
   kbBindAlpha();
+  naimChipsUpdate();
 }
 
 function _kbBind(el) {
@@ -1403,41 +1424,41 @@ let _naimActiveInput = null;
 
 function naimDropdownShow(input) {
   _naimActiveInput = input;
-  const val = input.value.trim();
-  const drop = document.getElementById("naim-dropdown");
+  naimChipsUpdate();
+}
+
+function naimDropdownClose() {
+  const el = document.getElementById("naim-chips-kb");
+  if (el) { el.innerHTML = ""; el.classList.remove("has-chips"); }
+}
+
+function naimChipsUpdate() {
+  const input = _naimActiveInput;
+  const val = input ? input.value.trim() : "";
   const filtered = val
     ? NAIM_LIST.filter(n => n.toLowerCase().startsWith(val.toLowerCase()))
     : NAIM_LIST;
-  if (!filtered.length) { drop.classList.remove("open"); return; }
-  const shown = filtered.slice(0, 4);
-  drop.innerHTML = shown.map(n => {
-    if (!val) return `<div class="naim-drop-item" onmousedown="naimPick('${n}')" ontouchstart="naimPick('${n}')">${n}</div>`;
-    const idx = n.toLowerCase().indexOf(val.toLowerCase());
-    const hi = n.slice(0, idx)
-      + `<span class="naim-match">${n.slice(idx, idx + val.length)}</span>`
-      + n.slice(idx + val.length);
-    return `<div class="naim-drop-item" onmousedown="naimPick('${n}')" ontouchstart="naimPick('${n}')">${hi}</div>`;
-  }).join("");
-  naimDropdownPosition();
-  drop.classList.add("open");
-}
 
-function naimDropdownPosition() {
-  const drop = document.getElementById("naim-dropdown");
-  const kb = document.getElementById("custom-kb");
-  const vv = window.visualViewport;
-  let kbH = 0;
-  if (kb && kb.classList.contains("visible")) {
-    kbH = kb.offsetHeight;
-  }
-  const offsetY = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
-  drop.style.bottom = (kbH + 8 + offsetY) + "px";
-  drop.style.top = "auto";
-  drop.style.height = "";
+  const makeChip = (n) => {
+    if (!val) return `<div class="naim-chip" onmousedown="naimPick('${n}')" ontouchstart="naimPick('${n}')">${n}</div>`;
+    const idx = n.toLowerCase().indexOf(val.toLowerCase());
+    const hi = n.slice(0, idx) + `<span class="naim-match">${n.slice(idx, idx+val.length)}</span>` + n.slice(idx+val.length);
+    return `<div class="naim-chip" onmousedown="naimPick('${n}')" ontouchstart="naimPick('${n}')">${hi}</div>`;
+  };
+
+  const half = Math.ceil(filtered.length / 2);
+  const row1 = filtered.slice(0, half);
+  const row2 = filtered.slice(half);
+  const html = (row1.length ? `<div class="naim-chip-row">${row1.map(makeChip).join("")}</div>` : "") +
+               (row2.length ? `<div class="naim-chip-row">${row2.map(makeChip).join("")}</div>` : "");
+
+  const kbEl = document.getElementById("naim-chips-kb");
+  if (!kbEl) return;
+  kbEl.innerHTML = filtered.length ? html : "";
+  kbEl.classList.toggle("has-chips", filtered.length > 0);
 }
 
 function naimPick(val) {
-  document.getElementById("naim-dropdown").classList.remove("open");
   if (!_naimActiveInput) return;
   _naimActiveInput.value = val;
   const rowEl = _naimActiveInput.closest(".detail-row");
@@ -1453,26 +1474,7 @@ function naimPick(val) {
   }
 }
 
-function naimDropdownClose() {
-  document.getElementById("naim-dropdown").classList.remove("open");
-}
 
-if (window.visualViewport) {
-  window.visualViewport.addEventListener("resize", () => {
-    const drop = document.getElementById("naim-dropdown");
-    if (drop.classList.contains("open")) naimDropdownPosition();
-  });
-}
-
-document.addEventListener("click", e => {
-  if (!e.target.closest(".naim-dropdown") && !e.target.classList.contains("detail-name-input")) {
-    naimDropdownClose();
-  }
-});
-
-function kbRecommendShow() {}
-function kbRecommendHide() {}
-function kbRecommendRender() {}
 </script>
 </body>
 </html>
