@@ -432,7 +432,7 @@ body {
     <button class="kb-btn" data-kb="3">3</button>
     <button class="kb-btn next" data-kb="NEXT" id="kb-next-btn" style="grid-column:span 2">→</button>
 
-    <button class="kb-btn clear" data-kb="CLEAR">tzlsh</button>
+    <button class="kb-btn clear" data-kb="CLEAR">🗑</button>
     <button class="kb-btn" data-kb="0">0</button>
     <button class="kb-btn" data-kb=".">.</button>
     <button class="kb-btn ok" data-kb="OK" style="grid-column:span 2">OK</button>
@@ -1182,7 +1182,7 @@ function kbSetNumMode() {
     <button class="kb-btn" data-kb="2">2</button>
     <button class="kb-btn" data-kb="3">3</button>
     <button class="kb-btn next" data-kb="NEXT" id="kb-next-btn" style="grid-column:span 2">→</button>
-    <button class="kb-btn clear" data-kb="CLEAR">tzlsh</button>
+    <button class="kb-btn clear" data-kb="CLEAR">🗑</button>
     <button class="kb-btn" data-kb="0">0</button>
     <button class="kb-btn" data-kb=".">.</button>
     <button class="kb-btn ok" data-kb="OK" style="grid-column:span 2">OK</button>
@@ -1218,7 +1218,8 @@ function kbRenderAlpha(lang) {
     html += `</div>`;
   });
   html += `
-    <div style="display:grid;grid-template-columns:40px 1fr 40px 56px;gap:4px;">
+    <div style="display:grid;grid-template-columns:40px 40px 1fr 40px 56px;gap:4px;">
+      <button class="kb-btn clear" data-kb="CLEAR" style="font-size:16px;">🗑</button>
       <button class="kb-btn globe" data-kb="GLOBE">🌐</button>
       <button class="kb-btn" data-kb="NAIM: " style="font-size:12px;">space</button>
       <button class="kb-btn del" data-kb="DEL">⌫</button>
