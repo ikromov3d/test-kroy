@@ -78,11 +78,13 @@ body {
   width: 52px; background: var(--bg); border: 1.5px solid var(--btn);
   border-radius: 6px; color: var(--text); font-size: 14px;
   text-align: center; padding: 4px 2px; outline: none;
-  transition: width 0.15s ease;
+  transition: width 0.15s ease, border-color 0.15s ease, background 0.15s ease;
   min-width: 52px;
 }
 .size-field.kb-active {
   width: 120px;
+  border-color: var(--green);
+  background: rgba(48,209,88,0.08);
 }
 .size-sep { color: var(--hint); font-size: 13px; }
 .detail-badges { display: flex; gap: 4px; flex-shrink: 0; }
@@ -854,8 +856,11 @@ function kbOpen(rowIdx, fieldIdx) {
   const f = KB_FIELDS[fieldIdx];
   const el = document.getElementById(`f-${f}-${rowIdx}`);
   const raw = el ? el.value : "";
-  kbCurrentVal = (raw === "0" || raw === "") ? "" : raw;
-  // Avvalgi active classni olib tashlaymiz
+  // Agar stored qiymat bilan mos va default bo'lsa — bo'sh boshlaymiz
+  const stored = details[rowIdx] ? details[rowIdx][f] : 0;
+  const defaultVals = { uzun: 0, keng: 0, son: 1 };
+  const isDefault = stored === defaultVals[f] && String(stored) === raw;
+  kbCurrentVal = isDefault ? "" : raw;
   document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
   if (el) el.classList.add("kb-active");
   kbRefreshDisplay();
