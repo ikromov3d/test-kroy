@@ -456,6 +456,29 @@ const SHEET_SIZES = [[2440,1220],[2500,1830],[2750,1830],[2800,2070]];
   renderSheetSizes();
   kbBindEvents();
   initTipDropdown();
+
+  // Delete va row tap — event delegation
+  const listEl = document.getElementById("detail-list");
+  const listHandler = (e) => {
+    // Delete tugmasi
+    const delBtn = e.target.closest("[data-del]");
+    if (delBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      deleteRow(parseInt(delBtn.dataset.del));
+      return;
+    }
+    // Qatorga tap — tahrirlash
+    const row = e.target.closest(".detail-row");
+    if (!row) return;
+    if (e.target.tagName === "INPUT" || e.target.tagName === "BUTTON") return;
+    if (row.classList.contains("editing")) return;
+    e.preventDefault();
+    const idx = parseInt(row.id.replace("row-",""));
+    if (!isNaN(idx)) startEdit(idx);
+  };
+  listEl.addEventListener("touchstart", listHandler, { passive: false });
+  listEl.addEventListener("mousedown",  listHandler);
 })();
 
 // ── TAB SWITCH ────────────────────────────────────────────────────────────────
@@ -522,7 +545,7 @@ function renderList() {
     return;
   }
   c.innerHTML = details.map((d, i) => `
-    <div class="detail-row" id="row-${i}" onclick="rowTap(event,${i})">
+    <div class="detail-row" id="row-${i}">
       <div class="detail-num">${i+1}</div>
       <div class="detail-size" style="flex:1;display:flex;align-items:center;gap:4px;flex-wrap:nowrap;">
         <div class="detail-size-text" style="white-space:nowrap">${d.uzun}×${d.keng}×${d.son}</div>
@@ -539,7 +562,7 @@ function renderList() {
       </div>
       <div class="detail-badges">${kromBadges(d)}</div>
       <div class="row-actions">
-        <button class="btn-icon danger" onclick="event.stopPropagation();deleteRow(${i})">🗑</button>
+        <button class="btn-icon danger" data-del="${i}">🗑</button>
       </div>
     </div>`).join("");
 }
@@ -575,16 +598,18 @@ function startEdit(i) {
   if (naimInput) naimInput.style.display = "block";
   if (naimText)  naimText.style.display  = "none";
 
-  // Har bir size field uchun touch/click event — ikki marta chaqirilmasin
+  // Har bir size field uchun — avval eski listenerlarni tozalaymiz
   KB_FIELDS.forEach((f, fi) => {
     const el = document.getElementById(`f-${f}-${i}`);
     if (!el) return;
-    const handler = (e) => {
-      e.preventDefault();
-      kbOpen(i, fi);
-    };
-    el.addEventListener("touchstart", handler, { passive: false });
-    el.addEventListener("mousedown", handler);
+    // Eski handlerni olib tashlash uchun clone trick
+    const clone = el.cloneNode(true);
+    el.parentNode.replaceChild(clone, el);
+    const fresh = document.getElementById(`f-${f}-${i}`);
+
+    const open = (e) => { e.preventDefault(); kbOpen(i, fi); };
+    fresh.addEventListener("touchstart", open, { passive: false });
+    fresh.addEventListener("mousedown",  open);
   });
 
   if (naimInput) {
