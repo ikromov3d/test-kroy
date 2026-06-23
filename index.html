@@ -81,7 +81,7 @@ body {
   transition: width 0.15s ease;
   min-width: 52px;
 }
-.size-field:focus {
+.size-field.kb-active {
   width: 120px;
 }
 .size-sep { color: var(--hint); font-size: 13px; }
@@ -854,8 +854,10 @@ function kbOpen(rowIdx, fieldIdx) {
   const f = KB_FIELDS[fieldIdx];
   const el = document.getElementById(`f-${f}-${rowIdx}`);
   const raw = el ? el.value : "";
-  // 0 bo'lsa bo'sh deb qabul qilamiz
   kbCurrentVal = (raw === "0" || raw === "") ? "" : raw;
+  // Avvalgi active classni olib tashlaymiz
+  document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
+  if (el) el.classList.add("kb-active");
   kbRefreshDisplay();
   document.getElementById("custom-kb").classList.add("visible");
   document.querySelector(".bottom-bar").style.bottom =
@@ -866,6 +868,7 @@ function kbClose() {
   if (kbActiveRow >= 0) kbConfirmField();
   kbActiveRow = -1;
   kbCurrentVal = "";
+  document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
   document.getElementById("custom-kb").classList.remove("visible");
   document.querySelector(".bottom-bar").style.bottom = "";
 }
@@ -880,10 +883,11 @@ function kbRefreshDisplay() {
     (res > 0 && res !== orig && val.match(/[\+\-\*\/]/)) ? "= " + res : "";
   const nextBtn = document.getElementById("kb-next-btn");
   nextBtn.textContent = kbActiveField < KB_FIELDS.length - 1 ? "→" : "✓ Nom";
-  // inputga ham ko'rsatamiz
+  // inputga ham ko'rsatamiz va kb-active class
+  document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
   const f = KB_FIELDS[kbActiveField];
   const el = document.getElementById(`f-${f}-${kbActiveRow}`);
-  if (el) el.value = val;
+  if (el) { el.value = val; el.classList.add("kb-active"); }
 }
 
 function kbTap(ch) {
