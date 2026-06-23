@@ -78,6 +78,11 @@ body {
   width: 52px; background: var(--bg); border: 1.5px solid var(--btn);
   border-radius: 6px; color: var(--text); font-size: 14px;
   text-align: center; padding: 4px 2px; outline: none;
+  transition: width 0.15s ease;
+  min-width: 52px;
+}
+.size-field:focus {
+  width: 120px;
 }
 .size-sep { color: var(--hint); font-size: 13px; }
 .detail-badges { display: flex; gap: 4px; flex-shrink: 0; }
@@ -360,9 +365,11 @@ function switchTab(tab) {
     L.textContent = "⬅️ Orqaga"; R.textContent = "🎨 Kromka →";
   } else if (tab === "krom") {
     L.textContent = "⬅️ Ro'yxat"; R.textContent = "🪚 Kroy →";
+    // closeAllEdits ichida renderList chaqirilishi mumkin, shuning uchun kechiktirish
+    setTimeout(() => renderKrom(), 0);
   } else if (tab === "kroy") {
     L.textContent = "⬅️ Kromka"; R.textContent = "✅ Tasdiqlash";
-    renderKrom(); // kromka badgelerini yangilash uchun
+    setTimeout(() => renderKrom(), 0);
   }
 }
 
@@ -383,6 +390,21 @@ function onRightBtn() {
   }
 }
 
+// ── MATH EVAL ─────────────────────────────────────────────────────────────────
+function evalMath(val) {
+  if (!val && val !== 0) return 0;
+  const s = String(val).trim().replace(/,/g, '.');
+  // Faqat raqamlar va matematik amallar bo'lsa hisoblaymiz
+  if (/^[\d\s\+\-\*\/\.\(\)]+$/.test(s)) {
+    try {
+      const result = Function('"use strict"; return (' + s + ')')();
+      if (isFinite(result) && result > 0) return Math.round(result);
+    } catch(e) {}
+  }
+  const n = parseFloat(s);
+  return isFinite(n) ? Math.round(n) : 0;
+}
+
 // ── RENDER LIST ───────────────────────────────────────────────────────────────
 function renderList() {
   const c = document.getElementById("detail-list");
@@ -396,11 +418,11 @@ function renderList() {
       <div class="detail-size" style="flex:1;display:flex;align-items:center;gap:4px;flex-wrap:nowrap;">
         <div class="detail-size-text" style="white-space:nowrap">${d.uzun}×${d.keng}×${d.son}</div>
         <div class="detail-size-input" id="edit-${i}" style="display:none;align-items:center;gap:2px;">
-          <input class="size-field" id="f-uzun-${i}" type="number" inputmode="numeric" value="${d.uzun}">
+          <input class="size-field" id="f-uzun-${i}" type="text" inputmode="decimal" value="${d.uzun}">
           <span class="size-sep">×</span>
-          <input class="size-field" id="f-keng-${i}" type="number" inputmode="numeric" value="${d.keng}">
+          <input class="size-field" id="f-keng-${i}" type="text" inputmode="decimal" value="${d.keng}">
           <span class="size-sep">×</span>
-          <input class="size-field" id="f-son-${i}" type="number" inputmode="numeric" value="${d.son}">
+          <input class="size-field" id="f-son-${i}" type="text" inputmode="decimal" value="${d.son}">
         </div>
 
         <div class="detail-name-text" style="flex:1;color:#ff3b30;font-size:15px;font-weight:600;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.naim||''}</div>
@@ -465,10 +487,15 @@ function startEdit(i) {
         }
       }
     });
-    el.addEventListener("blur", () => setTimeout(() => {
-      const r = document.getElementById("row-"+i);
-      if (r?.classList.contains("editing") && !r.contains(document.activeElement)) saveEdit(i);
-    }, 120));
+    el.addEventListener("blur", () => {
+      // Keyingi fieldga o'tganda hisoblangan natijani ko'rsatamiz
+      const computed = evalMath(el.value);
+      if (computed > 0) el.value = computed;
+      setTimeout(() => {
+        const r = document.getElementById("row-"+i);
+        if (r?.classList.contains("editing") && !r.contains(document.activeElement)) saveEdit(i);
+      }, 120);
+    });
   });
   if (naimInput) {
     naimInput.addEventListener("keydown", e => {
@@ -495,9 +522,12 @@ function startEdit(i) {
 }
 
 function saveEdit(i) {
-  const uzun = parseInt(document.getElementById("f-uzun-"+i)?.value)||0;
-  const keng = parseInt(document.getElementById("f-keng-"+i)?.value)||0;
-  const son  = parseInt(document.getElementById("f-son-"+i)?.value)||1;
+  const uzunEl = document.getElementById("f-uzun-"+i);
+  const kengEl = document.getElementById("f-keng-"+i);
+  const sonEl  = document.getElementById("f-son-"+i);
+  const uzun = evalMath(uzunEl?.value);
+  const keng = evalMath(kengEl?.value);
+  const son  = evalMath(sonEl?.value) || 1;
   if (uzun<=0||keng<=0||son<=0) { showToast("❌ O'lchamlar noto'g'ri"); return; }
   const naim = document.getElementById("f-naim-"+i)?.value?.trim() || "";
   details[i].uzun=uzun; details[i].keng=keng; details[i].son=son; details[i].naim=naim;
