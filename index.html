@@ -446,18 +446,43 @@ function startEdit(i) {
   if (naimInput) naimInput.style.display = "block";
   if (naimText)  naimText.style.display  = "none";
 
-  ["uzun","keng","son"].forEach(f => {
+  ["uzun","keng","son"].forEach((f, fi) => {
     const el = document.getElementById(`f-${f}-${i}`);
     if (!el) return;
     el.addEventListener("focus", () => el.select(), {once:false});
-    el.addEventListener("keydown", e => { if(e.key==="Enter") saveEdit(i); });
+    el.addEventListener("keydown", e => {
+      if(e.key==="Enter") {
+        e.preventDefault();
+        const fields = ["uzun","keng","son"];
+        if (fi < fields.length - 1) {
+          // Keyingi inputga o'tish
+          const next = document.getElementById(`f-${fields[fi+1]}-${i}`);
+          if (next) { next.focus(); next.select(); }
+        } else {
+          // son inputida Enter → nom inputiga o'tish
+          const naimEl = document.getElementById(`f-naim-${i}`);
+          if (naimEl) { naimEl.focus(); naimEl.select(); }
+        }
+      }
+    });
     el.addEventListener("blur", () => setTimeout(() => {
       const r = document.getElementById("row-"+i);
       if (r?.classList.contains("editing") && !r.contains(document.activeElement)) saveEdit(i);
     }, 120));
   });
   if (naimInput) {
-    naimInput.addEventListener("keydown", e => { if(e.key==="Enter") saveEdit(i); });
+    naimInput.addEventListener("keydown", e => {
+      if(e.key==="Enter") {
+        e.preventDefault();
+        saveEdit(i);
+        // Keyingi qatorni ochish
+        if (i + 1 < details.length) {
+          startEdit(i + 1);
+        } else {
+          addRow();
+        }
+      }
+    });
     naimInput.addEventListener("blur", () => setTimeout(() => {
       const r = document.getElementById("row-"+i);
       if (r?.classList.contains("editing") && !r.contains(document.activeElement)) saveEdit(i);
@@ -737,7 +762,10 @@ function sendData() {
   };
 
   if (tg?.sendData) {
-    try { tg.sendData(JSON.stringify(payload)); }
+    try {
+      tg.sendData(JSON.stringify(payload));
+      tg.close();
+    }
     catch(e) { showToast("❌ Yuborishda xato: "+e.message); }
   } else {
     console.log("sendData:", JSON.stringify(payload, null, 2));
