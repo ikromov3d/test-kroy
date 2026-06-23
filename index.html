@@ -475,12 +475,14 @@ function startEdit(i) {
       if(e.key==="Enter") {
         e.preventDefault();
         saveEdit(i);
-        // Keyingi qatorni ochish
-        if (i + 1 < details.length) {
-          startEdit(i + 1);
-        } else {
-          addRow();
-        }
+        // renderList() dan keyin DOM tayyor bo'lishi uchun setTimeout
+        setTimeout(() => {
+          if (i + 1 < details.length) {
+            startEdit(i + 1);
+          } else {
+            addRow();
+          }
+        }, 0);
       }
     });
     naimInput.addEventListener("blur", () => setTimeout(() => {
