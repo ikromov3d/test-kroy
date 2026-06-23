@@ -349,40 +349,40 @@ body {
 
 <!-- CUSTOM KEYBOARD -->
 <div class="custom-kb" id="custom-kb">
-  <div class="kb-field-tabs">
-    <div class="kb-tab" id="kb-tab-0" onclick="kbSwitchField(0)">Uzun</div>
-    <div class="kb-tab" id="kb-tab-1" onclick="kbSwitchField(1)">Keng</div>
-    <div class="kb-tab" id="kb-tab-2" onclick="kbSwitchField(2)">Son</div>
+  <div class="kb-field-tabs" id="kb-field-tabs">
+    <div class="kb-tab" id="kb-tab-0">Uzun</div>
+    <div class="kb-tab" id="kb-tab-1">Keng</div>
+    <div class="kb-tab" id="kb-tab-2">Son</div>
   </div>
   <div class="kb-display">
     <div class="kb-display-val" id="kb-val">—</div>
     <div class="kb-display-eval" id="kb-eval"></div>
   </div>
-  <div class="kb-rows">
-    <button class="kb-btn op" ontouchstart="" onclick="kbTap('(')" >(</button>
-    <button class="kb-btn op" ontouchstart="" onclick="kbTap(')')" >)</button>
-    <button class="kb-btn op" ontouchstart="" onclick="kbTap('/')" >÷</button>
-    <button class="kb-btn op" ontouchstart="" onclick="kbTap('*')" >×</button>
-    <button class="kb-btn del" ontouchstart="" onclick="kbDel()">⌫</button>
+  <div class="kb-rows" id="kb-rows">
+    <button class="kb-btn op" data-kb="("  >(</button>
+    <button class="kb-btn op" data-kb=")"  >)</button>
+    <button class="kb-btn op" data-kb="/"  >÷</button>
+    <button class="kb-btn op" data-kb="*"  >×</button>
+    <button class="kb-btn del" data-kb="DEL">⌫</button>
 
-    <button class="kb-btn" ontouchstart="" onclick="kbTap('7')">7</button>
-    <button class="kb-btn" ontouchstart="" onclick="kbTap('8')">8</button>
-    <button class="kb-btn" ontouchstart="" onclick="kbTap('9')">9</button>
-    <button class="kb-btn op" ontouchstart="" onclick="kbTap('-')" style="grid-column:span 2">−</button>
+    <button class="kb-btn" data-kb="7">7</button>
+    <button class="kb-btn" data-kb="8">8</button>
+    <button class="kb-btn" data-kb="9">9</button>
+    <button class="kb-btn op" data-kb="-" style="grid-column:span 2">−</button>
 
-    <button class="kb-btn" ontouchstart="" onclick="kbTap('4')">4</button>
-    <button class="kb-btn" ontouchstart="" onclick="kbTap('5')">5</button>
-    <button class="kb-btn" ontouchstart="" onclick="kbTap('6')">6</button>
-    <button class="kb-btn op" ontouchstart="" onclick="kbTap('+')" style="grid-column:span 2">+</button>
+    <button class="kb-btn" data-kb="4">4</button>
+    <button class="kb-btn" data-kb="5">5</button>
+    <button class="kb-btn" data-kb="6">6</button>
+    <button class="kb-btn op" data-kb="+" style="grid-column:span 2">+</button>
 
-    <button class="kb-btn" ontouchstart="" onclick="kbTap('1')">1</button>
-    <button class="kb-btn" ontouchstart="" onclick="kbTap('2')">2</button>
-    <button class="kb-btn" ontouchstart="" onclick="kbTap('3')">3</button>
-    <button class="kb-btn next" ontouchstart="" onclick="kbNext()" id="kb-next-btn" style="grid-column:span 2">→</button>
+    <button class="kb-btn" data-kb="1">1</button>
+    <button class="kb-btn" data-kb="2">2</button>
+    <button class="kb-btn" data-kb="3">3</button>
+    <button class="kb-btn next" data-kb="NEXT" id="kb-next-btn" style="grid-column:span 2">→</button>
 
-    <button class="kb-btn" ontouchstart="" onclick="kbTap('0')" style="grid-column:span 2">0</button>
-    <button class="kb-btn" ontouchstart="" onclick="kbTap('.')">.</button>
-    <button class="kb-btn ok" ontouchstart="" onclick="kbOk()" style="grid-column:span 2">OK</button>
+    <button class="kb-btn" data-kb="0" style="grid-column:span 2">0</button>
+    <button class="kb-btn" data-kb=".">.</button>
+    <button class="kb-btn ok" data-kb="OK" style="grid-column:span 2">OK</button>
   </div>
 </div>
 
@@ -434,6 +434,7 @@ const SHEET_SIZES = [[2440,1220],[2500,1830],[2750,1830],[2800,2070]];
   renderList();
   renderKrom();
   renderSheetSizes();
+  kbBindEvents();
 })();
 
 // ── TAB SWITCH ────────────────────────────────────────────────────────────────
@@ -505,11 +506,11 @@ function renderList() {
       <div class="detail-size" style="flex:1;display:flex;align-items:center;gap:4px;flex-wrap:nowrap;">
         <div class="detail-size-text" style="white-space:nowrap">${d.uzun}×${d.keng}×${d.son}</div>
         <div class="detail-size-input" id="edit-${i}" style="display:none;align-items:center;gap:2px;">
-          <input class="size-field" id="f-uzun-${i}" type="text" inputmode="none" readonly value="${d.uzun}" ontouchstart="event.preventDefault();kbOpen(${i},0)" onclick="kbOpen(${i},0)">
+          <input class="size-field" id="f-uzun-${i}" type="text" inputmode="none" readonly value="${d.uzun}">
           <span class="size-sep">×</span>
-          <input class="size-field" id="f-keng-${i}" type="text" inputmode="none" readonly value="${d.keng}" ontouchstart="event.preventDefault();kbOpen(${i},1)" onclick="kbOpen(${i},1)">
+          <input class="size-field" id="f-keng-${i}" type="text" inputmode="none" readonly value="${d.keng}">
           <span class="size-sep">×</span>
-          <input class="size-field" id="f-son-${i}" type="text" inputmode="none" readonly value="${d.son}" ontouchstart="event.preventDefault();kbOpen(${i},2)" onclick="kbOpen(${i},2)">
+          <input class="size-field" id="f-son-${i}" type="text" inputmode="none" readonly value="${d.son}">
         </div>
 
         <div class="detail-name-text" style="flex:1;color:#ff3b30;font-size:15px;font-weight:600;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.naim||''}</div>
@@ -552,6 +553,18 @@ function startEdit(i) {
   const naimText  = row.querySelector(".detail-name-text");
   if (naimInput) naimInput.style.display = "block";
   if (naimText)  naimText.style.display  = "none";
+
+  // Har bir size field uchun touch/click event — ikki marta chaqirilmasin
+  KB_FIELDS.forEach((f, fi) => {
+    const el = document.getElementById(`f-${f}-${i}`);
+    if (!el) return;
+    const handler = (e) => {
+      e.preventDefault();
+      kbOpen(i, fi);
+    };
+    el.addEventListener("touchstart", handler, { passive: false });
+    el.addEventListener("mousedown", handler);
+  });
 
   if (naimInput) {
     naimInput.addEventListener("keydown", e => {
@@ -863,10 +876,54 @@ function sendData() {
 
 // ── CUSTOM KEYBOARD ───────────────────────────────────────────────────────────
 const KB_FIELDS = ["uzun","keng","son"];
-const KB_LABELS = ["Uzun (mm)", "Keng (mm)", "Son"];
 let kbActiveRow = -1;
 let kbActiveField = 0;
-let kbCurrentVal = ""; // joriy kiritilayotgan qiymat
+let kbCurrentVal = "";
+
+// Touch/click ikki marta ishlamasligi uchun unified handler
+function kbBindEvents() {
+  // Tugmalar
+  document.getElementById("kb-rows").addEventListener("touchstart", function(e) {
+    const btn = e.target.closest("[data-kb]");
+    if (!btn) return;
+    e.preventDefault();
+    kbHandleKey(btn.dataset.kb);
+  }, { passive: false });
+
+  document.getElementById("kb-rows").addEventListener("mousedown", function(e) {
+    // Faqat touch bo'lmasa (desktop)
+    if (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
+    const btn = e.target.closest("[data-kb]");
+    if (!btn) return;
+    e.preventDefault();
+    kbHandleKey(btn.dataset.kb);
+  });
+
+  // Tablar
+  document.getElementById("kb-field-tabs").addEventListener("touchstart", function(e) {
+    const tab = e.target.closest(".kb-tab");
+    if (!tab) return;
+    e.preventDefault();
+    const idx = parseInt(tab.id.replace("kb-tab-",""));
+    if (!isNaN(idx)) kbSwitchField(idx);
+  }, { passive: false });
+
+  document.getElementById("kb-field-tabs").addEventListener("mousedown", function(e) {
+    if (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
+    const tab = e.target.closest(".kb-tab");
+    if (!tab) return;
+    e.preventDefault();
+    const idx = parseInt(tab.id.replace("kb-tab-",""));
+    if (!isNaN(idx)) kbSwitchField(idx);
+  });
+}
+
+function kbHandleKey(key) {
+  if (key === "DEL")  { kbDel(); return; }
+  if (key === "NEXT") { kbNext(); return; }
+  if (key === "OK")   { kbOk(); return; }
+  kbTap(key);
+}
 
 function kbOpen(rowIdx, fieldIdx) {
   kbActiveRow = rowIdx;
@@ -1003,4 +1060,3 @@ function showToast(msg) {
 </script>
 </body>
 </html>
- 
