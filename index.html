@@ -252,6 +252,20 @@ body {
   transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
 }
 .custom-kb.visible { transform: translateY(0); }
+.kb-recommend-row {
+  display: flex; gap: 6px; overflow-x: auto; padding: 0 0 6px;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.kb-recommend-row::-webkit-scrollbar { display: none; }
+.kb-recommend-chip {
+  flex-shrink: 0; padding: 5px 12px; border-radius: 20px; font-size: 13px;
+  background: var(--bg); color: var(--text); border: 1px solid var(--sep);
+  cursor: pointer; white-space: nowrap; line-height: 1.4;
+}
+.kb-recommend-chip:active { opacity: 0.6; }
+.kb-recommend-row.hidden { display: none; }
+.kb-btn.clear { background: rgba(255,69,58,0.12); color: var(--red); font-size: 13px; font-weight: 600; }
+.kb-btn.globe { background: rgba(142,142,147,0.15); color: var(--text); font-size: 18px; }
 .kb-field-tabs {
   display: flex; gap: 6px; margin-bottom: 6px;
 }
@@ -287,9 +301,25 @@ body {
 .kb-btn.del { background: rgba(255,69,58,0.12); color: var(--red); font-size: 18px; }
 .kb-btn.ok  { background: var(--btn); color: var(--btn-text); font-size: 16px; font-weight: 700; }
 .kb-btn.next { background: rgba(10,132,255,0.12); color: var(--blue); font-size: 15px; font-weight: 600; }
+.naim-dropdown {
+  position: fixed; left: 12px; right: 12px; z-index: 9999;
+  background: var(--bg2); border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  overflow: hidden; display: none;
+}
+.naim-dropdown.open { display: block; }
+.naim-drop-item {
+  padding: 13px 16px; font-size: 15px; cursor: pointer;
+  border-bottom: 1px solid var(--sep); color: var(--text);
+}
+.naim-drop-item:last-child { border-bottom: none; }
+.naim-drop-item:active { background: rgba(255,255,255,0.06); }
+.naim-drop-item .naim-match { color: var(--btn); font-weight: 600; }
 </style>
 </head>
 <body>
+
+<div class="naim-dropdown" id="naim-dropdown"></div>
 
 <div class="header">
   <div class="header-title">✂️ Kroy Editor</div>
@@ -375,6 +405,7 @@ body {
     <div class="kb-tab" id="kb-tab-1">Keng</div>
     <div class="kb-tab" id="kb-tab-2">Son</div>
   </div>
+  <div class="kb-recommend-row hidden" id="kb-recommend-row"></div>
   <div class="kb-display">
     <div class="kb-display-val" id="kb-val">—</div>
     <div class="kb-display-eval" id="kb-eval"></div>
@@ -401,7 +432,8 @@ body {
     <button class="kb-btn" data-kb="3">3</button>
     <button class="kb-btn next" data-kb="NEXT" id="kb-next-btn" style="grid-column:span 2">→</button>
 
-    <button class="kb-btn" data-kb="0" style="grid-column:span 2">0</button>
+    <button class="kb-btn clear" data-kb="CLEAR">tzlsh</button>
+    <button class="kb-btn" data-kb="0">0</button>
     <button class="kb-btn" data-kb=".">.</button>
     <button class="kb-btn ok" data-kb="OK" style="grid-column:span 2">OK</button>
   </div>
@@ -630,6 +662,8 @@ function startEdit(i) {
         if (!document.getElementById("custom-kb").classList.contains("visible")) saveEdit(i);
       }
     }, 150));
+    naimInput.addEventListener("input", () => naimDropdownShow(naimInput));
+    naimInput.addEventListener("focus", () => naimDropdownShow(naimInput));
   }
 
   kbOpen(i, 0);
@@ -966,10 +1000,39 @@ function kbBindEvents() {
 }
 
 function kbHandleKey(key) {
-  if (key === "DEL")  { kbDel(); return; }
-  if (key === "NEXT") { kbNext(); return; }
-  if (key === "OK")   { kbOk(); return; }
+  if (key === "DEL")   { kbDel(); return; }
+  if (key === "NEXT")  { kbNext(); return; }
+  if (key === "OK")    { kbOk(); return; }
+  if (key === "CLEAR") { kbClear(); return; }
+  if (key === "GLOBE") {
+    kbRenderAlpha(_kbAlphaLang === "en" ? "ru" : "en");
+    return;
+  }
+  if (key.startsWith("NAIM:")) {
+    const ch = key.slice(5);
+    const naimEl = document.getElementById("f-naim-" + kbActiveRow);
+    if (naimEl) {
+      naimEl.value += ch;
+      naimEl.dispatchEvent(new Event("input"));
+      const row = document.getElementById("kb-display") || document.getElementById("kb-val");
+      if (row) row.textContent = naimEl.value;
+    }
+    return;
+  }
   kbTap(key);
+}
+
+function kbClear() {
+  if (_kbIsNaimMode) {
+    const naimEl = document.getElementById("f-naim-" + kbActiveRow);
+    if (naimEl) { naimEl.value = ""; naimEl.dispatchEvent(new Event("input")); }
+    return;
+  }
+  const f = KB_FIELDS[kbActiveField];
+  const el = document.getElementById(`f-${f}-${kbActiveRow}`);
+  if (el) el.value = "";
+  kbCurrentVal = "";
+  kbRefreshDisplay();
 }
 
 function kbOpen(rowIdx, fieldIdx) {
@@ -989,6 +1052,8 @@ function kbOpen(rowIdx, fieldIdx) {
   document.getElementById("custom-kb").classList.add("visible");
   document.querySelector(".bottom-bar").style.bottom =
     document.getElementById("custom-kb").offsetHeight + "px";
+  kbRecommendHide();
+  if (_kbIsNaimMode) kbSetNumMode();
 }
 
 function kbClose() {
@@ -998,6 +1063,8 @@ function kbClose() {
   document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
   document.getElementById("custom-kb").classList.remove("visible");
   document.querySelector(".bottom-bar").style.bottom = "";
+  kbRecommendHide();
+  if (_kbIsNaimMode) kbSetNumMode();
 }
 
 function kbRefreshDisplay() {
@@ -1050,6 +1117,14 @@ function kbTap(ch) {
 }
 
 function kbDel() {
+  if (_kbIsNaimMode) {
+    const naimEl = document.getElementById("f-naim-" + kbActiveRow);
+    if (naimEl) {
+      naimEl.value = naimEl.value.slice(0, -1);
+      naimEl.dispatchEvent(new Event("input"));
+    }
+    return;
+  }
   kbCurrentVal = kbCurrentVal.slice(0, -1);
   kbRefreshDisplay();
 }
@@ -1066,7 +1141,6 @@ function kbNext() {
   kbConfirmField();
   if (kbActiveField < KB_FIELDS.length - 1) {
     kbActiveField++;
-    // Keyingi fieldning qiymatini yangi o'qiymiz
     const f = KB_FIELDS[kbActiveField];
     const el = document.getElementById(`f-${f}-${kbActiveRow}`);
     const raw = el ? el.value : "";
@@ -1074,21 +1148,109 @@ function kbNext() {
     const defaultVals = { uzun: 0, keng: 0, son: 1 };
     const isDefault = stored === defaultVals[f] && String(stored) === raw;
     kbCurrentVal = isDefault ? "" : raw;
-    // Highlight yangilash
     document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
     if (el) el.classList.add("kb-active");
     kbRefreshDisplay();
+    kbRecommendHide();
+    kbSetNumMode();
   } else {
-    const savedRow = kbActiveRow;
-    kbClose();
-    setTimeout(() => {
-      const naimEl = document.getElementById(`f-naim-${savedRow}`);
-      if (naimEl) naimEl.focus();
-    }, 50);
+    kbSetNaimMode();
+    kbRecommendShow();
   }
 }
 
+let _kbIsNaimMode = false;
+let _kbAlphaLang = "en";
+
+function kbSetNumMode() {
+  _kbIsNaimMode = false;
+  document.getElementById("kb-rows").innerHTML = `
+    <button class="kb-btn op" data-kb="(">(</button>
+    <button class="kb-btn op" data-kb=")">)</button>
+    <button class="kb-btn op" data-kb="/">÷</button>
+    <button class="kb-btn op" data-kb="*">×</button>
+    <button class="kb-btn del" data-kb="DEL">⌫</button>
+    <button class="kb-btn" data-kb="7">7</button>
+    <button class="kb-btn" data-kb="8">8</button>
+    <button class="kb-btn" data-kb="9">9</button>
+    <button class="kb-btn op" data-kb="-" style="grid-column:span 2">−</button>
+    <button class="kb-btn" data-kb="4">4</button>
+    <button class="kb-btn" data-kb="5">5</button>
+    <button class="kb-btn" data-kb="6">6</button>
+    <button class="kb-btn op" data-kb="+" style="grid-column:span 2">+</button>
+    <button class="kb-btn" data-kb="1">1</button>
+    <button class="kb-btn" data-kb="2">2</button>
+    <button class="kb-btn" data-kb="3">3</button>
+    <button class="kb-btn next" data-kb="NEXT" id="kb-next-btn" style="grid-column:span 2">→</button>
+    <button class="kb-btn clear" data-kb="CLEAR">tzlsh</button>
+    <button class="kb-btn" data-kb="0">0</button>
+    <button class="kb-btn" data-kb=".">.</button>
+    <button class="kb-btn ok" data-kb="OK" style="grid-column:span 2">OK</button>
+  `;
+  kbBindRows();
+}
+
+function kbSetNaimMode() {
+  _kbIsNaimMode = true;
+  kbRenderAlpha("en");
+}
+
+function kbRenderAlpha(lang) {
+  _kbAlphaLang = lang;
+  const en = [
+    ["q","w","e","r","t","y","u","i","o","p"],
+    ["a","s","d","f","g","h","j","k","l"],
+    ["z","x","c","v","b","n","m"]
+  ];
+  const ru = [
+    ["й","ц","у","к","е","н","г","ш","щ","з"],
+    ["ф","ы","в","а","п","р","о","л","д","ж"],
+    ["я","ч","с","м","и","т","ь","б","ю"]
+  ];
+  const rows = lang === "en" ? en : ru;
+  let html = "";
+  rows.forEach((row) => {
+    const cols = row.length;
+    html += `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:4px;margin-bottom:4px;">`;
+    row.forEach(ch => {
+      html += `<button class="kb-btn" data-kb="NAIM:${ch}" style="font-size:14px;padding:0;">${ch}</button>`;
+    });
+    html += `</div>`;
+  });
+  html += `
+    <div style="display:grid;grid-template-columns:40px 1fr 40px 56px;gap:4px;">
+      <button class="kb-btn globe" data-kb="GLOBE">🌐</button>
+      <button class="kb-btn" data-kb="NAIM: " style="font-size:12px;">space</button>
+      <button class="kb-btn del" data-kb="DEL">⌫</button>
+      <button class="kb-btn ok" data-kb="OK">OK</button>
+    </div>
+  `;
+  document.getElementById("kb-rows").innerHTML = html;
+  kbBindRows();
+}
+
+function kbBindRows() {
+  const rows = document.getElementById("kb-rows");
+  const clone = rows.cloneNode(true);
+  rows.parentNode.replaceChild(clone, rows);
+  const fresh = document.getElementById("kb-rows");
+  const handler = function(e) {
+    e.preventDefault();
+    const btn = e.target.closest("[data-kb]");
+    if (!btn) return;
+    kbHandleKey(btn.dataset.kb);
+  };
+  fresh.addEventListener("touchstart", handler, { passive: false });
+  fresh.addEventListener("mousedown", handler);
+}
+
 function kbOk() {
+  if (_kbIsNaimMode) {
+    const row = kbActiveRow;
+    kbClose();
+    if (row >= 0) saveEdit(row);
+    return;
+  }
   const row = kbActiveRow;
   kbConfirmField();
   kbClose();
@@ -1177,6 +1339,76 @@ function showToast(msg) {
   el.classList.add("show");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=>el.classList.remove("show"), 2500);
+}
+
+const NAIM_LIST = [
+  "bokovoy","dno","doska","ekran","fasad","krisha","laga",
+  "planka","plintus","polka","sarga","spinka","stoyka","UTSH","zad"
+];
+
+let _naimActiveInput = null;
+
+function naimDropdownShow(input) {
+  _naimActiveInput = input;
+  const val = input.value;
+  const drop = document.getElementById("naim-dropdown");
+  const filtered = val
+    ? NAIM_LIST.filter(n => n.toLowerCase().includes(val.toLowerCase()))
+    : NAIM_LIST;
+  if (!filtered.length) { drop.classList.remove("open"); return; }
+  const rect = input.getBoundingClientRect();
+  drop.style.top = (rect.bottom + 6) + "px";
+  drop.innerHTML = filtered.map(n => {
+    if (!val) return `<div class="naim-drop-item" onmousedown="naimPick('${n}')" ontouchstart="naimPick('${n}')">${n}</div>`;
+    const idx = n.toLowerCase().indexOf(val.toLowerCase());
+    const hi = n.slice(0, idx)
+      + `<span class="naim-match">${n.slice(idx, idx + val.length)}</span>`
+      + n.slice(idx + val.length);
+    return `<div class="naim-drop-item" onmousedown="naimPick('${n}')" ontouchstart="naimPick('${n}')">${hi}</div>`;
+  }).join("");
+  drop.classList.add("open");
+}
+
+function naimPick(val) {
+  if (_naimActiveInput) {
+    _naimActiveInput.value = val;
+    _naimActiveInput.dispatchEvent(new Event("input"));
+  }
+  document.getElementById("naim-dropdown").classList.remove("open");
+}
+
+function naimDropdownClose() {
+  document.getElementById("naim-dropdown").classList.remove("open");
+}
+
+document.addEventListener("click", e => {
+  if (!e.target.closest(".naim-dropdown") && !e.target.classList.contains("detail-name-input")) {
+    naimDropdownClose();
+  }
+});
+
+function kbRecommendShow() {
+  const row = document.getElementById("kb-recommend-row");
+  row.classList.remove("hidden");
+  row.innerHTML = NAIM_LIST.map(n =>
+    `<div class="kb-recommend-chip" onmousedown="kbRecommendPick('${n}')" ontouchstart="kbRecommendPick('${n}')">${n}</div>`
+  ).join("");
+}
+
+function kbRecommendHide() {
+  const row = document.getElementById("kb-recommend-row");
+  row.classList.add("hidden");
+  row.innerHTML = "";
+}
+
+function kbRecommendPick(val) {
+  if (kbActiveRow !== -1) {
+    const naimEl = document.getElementById("f-naim-" + kbActiveRow);
+    if (naimEl) {
+      naimEl.value = val;
+      naimEl.dispatchEvent(new Event("input"));
+    }
+  }
 }
 </script>
 </body>
