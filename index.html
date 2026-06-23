@@ -437,6 +437,7 @@ body {
     <button class="kb-btn" data-kb=".">.</button>
     <button class="kb-btn ok" data-kb="OK" style="grid-column:span 2">OK</button>
   </div>
+  <div id="kb-alpha" style="display:none;"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1065,6 +1066,7 @@ function kbClose() {
   document.querySelector(".bottom-bar").style.bottom = "";
   kbRecommendHide();
   if (_kbIsNaimMode) kbSetNumMode();
+  document.getElementById("kb-alpha").style.display = "none";
 }
 
 function kbRefreshDisplay() {
@@ -1164,9 +1166,9 @@ let _kbAlphaLang = "en";
 
 function kbSetNumMode() {
   _kbIsNaimMode = false;
-  const kbRowsEl = document.getElementById("kb-rows");
-  kbRowsEl.style.display = "grid";
-  kbRowsEl.innerHTML = `
+  document.getElementById("kb-rows").style.display = "grid";
+  document.getElementById("kb-alpha").style.display = "none";
+  document.getElementById("kb-rows").innerHTML = `
     <button class="kb-btn op" data-kb="(">(</button>
     <button class="kb-btn op" data-kb=")">)</button>
     <button class="kb-btn op" data-kb="/">÷</button>
@@ -1247,24 +1249,36 @@ function kbRenderAlpha(lang) {
     <button class="kb-btn ok" data-kb="OK" style="flex:0 0 54px;height:42px;border-radius:7px;background:var(--btn);color:var(--btn-text);border:none;font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>`;
 
-  document.getElementById("kb-rows").style.display = "block";
-  document.getElementById("kb-rows").innerHTML = html;
-  kbBindRows();
+  document.getElementById("kb-rows").style.display = "none";
+  const alphaEl = document.getElementById("kb-alpha");
+  alphaEl.style.display = "block";
+  alphaEl.innerHTML = html;
+  kbBindAlpha();
 }
 
-function kbBindRows() {
-  const rows = document.getElementById("kb-rows");
-  const clone = rows.cloneNode(true);
-  rows.parentNode.replaceChild(clone, rows);
-  const fresh = document.getElementById("kb-rows");
+function _kbBind(el) {
   const handler = function(e) {
     e.preventDefault();
     const btn = e.target.closest("[data-kb]");
     if (!btn) return;
     kbHandleKey(btn.dataset.kb);
   };
-  fresh.addEventListener("touchstart", handler, { passive: false });
-  fresh.addEventListener("mousedown", handler);
+  el.addEventListener("touchstart", handler, { passive: false });
+  el.addEventListener("mousedown", handler);
+}
+
+function kbBindRows() {
+  const rows = document.getElementById("kb-rows");
+  const clone = rows.cloneNode(true);
+  rows.parentNode.replaceChild(clone, rows);
+  _kbBind(document.getElementById("kb-rows"));
+}
+
+function kbBindAlpha() {
+  const alpha = document.getElementById("kb-alpha");
+  const clone = alpha.cloneNode(true);
+  alpha.parentNode.replaceChild(clone, alpha);
+  _kbBind(document.getElementById("kb-alpha"));
 }
 
 function kbOk() {
