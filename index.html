@@ -294,12 +294,13 @@ body {
   position: fixed; left: 12px; right: 12px; z-index: 9999;
   background: var(--bg2); border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  overflow: hidden; display: none;
+  overflow-y: auto; overflow-x: hidden; display: none;
   max-height: calc(4 * 50px);
+  -webkit-overflow-scrolling: touch;
 }
 .naim-dropdown.open { display: block; }
 .naim-drop-item {
-  padding: 13px 16px; font-size: 15px; cursor: pointer;
+  padding: 0 16px; font-size: 15px; cursor: pointer;
   border-bottom: 1px solid var(--sep); color: var(--text);
   height: 50px; display: flex; align-items: center;
 }
@@ -654,7 +655,9 @@ function startEdit(i) {
       }
     }, 150));
     naimInput.addEventListener("input", () => naimDropdownShow(naimInput));
-    naimInput.addEventListener("focus", () => naimDropdownShow(naimInput));
+    naimInput.addEventListener("focus", () => {
+      naimDropdownShow(naimInput);
+    });
   }
 
   kbOpen(i, 0);
@@ -999,6 +1002,16 @@ function kbHandleKey(key) {
     kbRenderAlpha(_kbAlphaLang === "en" ? "ru" : "en");
     return;
   }
+  if (key === "ALPHA_NEXT") {
+    const row = kbActiveRow;
+    if (row !== -1) saveEdit(row);
+    kbClose();
+    setTimeout(() => {
+      if (row + 1 < details.length) startEdit(row + 1);
+      else addRow();
+    }, 50);
+    return;
+  }
   if (key.startsWith("NAIM:")) {
     const ch = key.slice(5);
     const naimEl = document.getElementById("f-naim-" + kbActiveRow);
@@ -1049,7 +1062,7 @@ function kbClose() {
   if (kbActiveRow >= 0) kbConfirmField();
   kbActiveRow = -1;
   kbCurrentVal = "";
-  document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
+  document.querySelectorAll(".size-field.kb-active, .detail-name-input.kb-active").forEach(e => e.classList.remove("kb-active"));
   document.getElementById("custom-kb").classList.remove("visible");
   document.querySelector(".bottom-bar").style.bottom = "";
   kbRecommendHide();
@@ -1184,6 +1197,9 @@ function kbSetNumMode() {
 
 function kbSetNaimMode() {
   _kbIsNaimMode = true;
+  document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
+  const naimEl = kbActiveRow !== -1 ? document.getElementById("f-naim-" + kbActiveRow) : null;
+  if (naimEl) naimEl.classList.add("kb-active");
   kbRenderAlpha("en");
 }
 
@@ -1234,6 +1250,7 @@ function kbRenderAlpha(lang) {
     <button class="kb-btn clear" data-kb="CLEAR" style="${sideStyle}background:rgba(142,142,147,0.18);font-size:18px;">🗑</button>
     <button class="kb-btn globe" data-kb="GLOBE" style="${sideStyle}background:rgba(142,142,147,0.18);font-size:18px;">🌐</button>
     <button data-kb="NAIM: " style="flex:1;height:42px;border-radius:7px;background:var(--bg);color:var(--hint);border:none;font-size:13px;cursor:pointer;">space</button>
+    <button data-kb="ALPHA_NEXT" style="flex:0 0 54px;height:42px;border-radius:7px;background:rgba(10,132,255,0.15);color:var(--blue);border:none;font-size:13px;font-weight:700;cursor:pointer;">next</button>
     <button class="kb-btn ok" data-kb="OK" style="flex:0 0 54px;height:42px;border-radius:7px;background:var(--btn);color:var(--btn-text);border:none;font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>`;
 
@@ -1393,11 +1410,6 @@ function naimDropdownShow(input) {
     : NAIM_LIST;
   if (!filtered.length) { drop.classList.remove("open"); return; }
   const shown = filtered.slice(0, 4);
-  const kb = document.getElementById("custom-kb");
-  const kbTop = kb && kb.classList.contains("visible") ? kb.getBoundingClientRect().top : window.innerHeight;
-  const dropH = shown.length * 50;
-  drop.style.top = (kbTop - dropH - 8) + "px";
-  drop.style.bottom = "auto";
   drop.innerHTML = shown.map(n => {
     if (!val) return `<div class="naim-drop-item" onmousedown="naimPick('${n}')" ontouchstart="naimPick('${n}')">${n}</div>`;
     const idx = n.toLowerCase().indexOf(val.toLowerCase());
@@ -1406,7 +1418,22 @@ function naimDropdownShow(input) {
       + n.slice(idx + val.length);
     return `<div class="naim-drop-item" onmousedown="naimPick('${n}')" ontouchstart="naimPick('${n}')">${hi}</div>`;
   }).join("");
+  naimDropdownPosition();
   drop.classList.add("open");
+}
+
+function naimDropdownPosition() {
+  const drop = document.getElementById("naim-dropdown");
+  const kb = document.getElementById("custom-kb");
+  const vv = window.visualViewport;
+  let kbH = 0;
+  if (kb && kb.classList.contains("visible")) {
+    kbH = kb.offsetHeight;
+  }
+  const offsetY = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
+  drop.style.bottom = (kbH + 8 + offsetY) + "px";
+  drop.style.top = "auto";
+  drop.style.height = "";
 }
 
 function naimPick(val) {
@@ -1428,6 +1455,13 @@ function naimPick(val) {
 
 function naimDropdownClose() {
   document.getElementById("naim-dropdown").classList.remove("open");
+}
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", () => {
+    const drop = document.getElementById("naim-dropdown");
+    if (drop.classList.contains("open")) naimDropdownPosition();
+  });
 }
 
 document.addEventListener("click", e => {
