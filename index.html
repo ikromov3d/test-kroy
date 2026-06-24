@@ -280,11 +280,11 @@ body {
 .kb-rows { display: flex; flex-direction: column; gap: 5px; padding: 0 4px; }
 .kb-row { display: flex; gap: 5px; }
 .kb-row .kb-btn { flex: 1; }
-.kb-row .kb-btn.span2 { flex: 2; }
+
 .kb-btn {
-  height: 52px; border: none; border-radius: 9px;
+  height: 54px; border: none; border-radius: 9px;
   background: var(--bg); color: var(--text);
-  font-size: 22px; font-weight: 500; cursor: pointer;
+  font-size: 24px; font-weight: 500; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: opacity 0.1s;
   -webkit-tap-highlight-color: transparent;
@@ -292,7 +292,7 @@ body {
   user-select: none;
 }
 .kb-btn:active { opacity: 0.5; }
-.kb-btn.op { color: var(--blue); font-size: 26px; }
+.kb-btn.op { color: var(--blue); font-size: 24px; }
 .kb-btn.del { background: rgba(255,69,58,0.12); color: var(--red); font-size: 22px; }
 .kb-btn.ok  { background: var(--btn); color: var(--btn-text); font-size: 20px; font-weight: 700; }
 .kb-btn.next { background: rgba(10,132,255,0.12); color: var(--blue); font-size: 18px; font-weight: 600; }
@@ -430,25 +430,25 @@ body {
       <button class="kb-btn" data-kb="7">7</button>
       <button class="kb-btn" data-kb="8">8</button>
       <button class="kb-btn" data-kb="9">9</button>
-      <button class="kb-btn op span2" data-kb="-">−</button>
+      <button class="kb-btn op" data-kb="-">−</button>
     </div>
     <div class="kb-row">
       <button class="kb-btn" data-kb="4">4</button>
       <button class="kb-btn" data-kb="5">5</button>
       <button class="kb-btn" data-kb="6">6</button>
-      <button class="kb-btn op span2" data-kb="+">+</button>
+      <button class="kb-btn op" data-kb="+">+</button>
     </div>
     <div class="kb-row">
       <button class="kb-btn" data-kb="1">1</button>
       <button class="kb-btn" data-kb="2">2</button>
       <button class="kb-btn" data-kb="3">3</button>
-      <button class="kb-btn next span2" data-kb="NEXT" id="kb-next-btn">→</button>
+      <button class="kb-btn next" data-kb="NEXT" id="kb-next-btn">→</button>
     </div>
     <div class="kb-row">
       <button class="kb-btn clear" data-kb="CLEAR">🗑</button>
       <button class="kb-btn" data-kb="0">0</button>
       <button class="kb-btn" data-kb=".">.</button>
-      <button class="kb-btn ok span2" data-kb="OK">OK</button>
+      <button class="kb-btn ok" data-kb="OK">OK</button>
     </div>
   </div>
   <div id="kb-alpha" style="display:none;"></div>
@@ -1256,25 +1256,25 @@ function kbSetNumMode() {
       <button class="kb-btn" data-kb="7">7</button>
       <button class="kb-btn" data-kb="8">8</button>
       <button class="kb-btn" data-kb="9">9</button>
-      <button class="kb-btn op span2" data-kb="-">−</button>
+      <button class="kb-btn op" data-kb="-">−</button>
     </div>
     <div class="kb-row">
       <button class="kb-btn" data-kb="4">4</button>
       <button class="kb-btn" data-kb="5">5</button>
       <button class="kb-btn" data-kb="6">6</button>
-      <button class="kb-btn op span2" data-kb="+">+</button>
+      <button class="kb-btn op" data-kb="+">+</button>
     </div>
     <div class="kb-row">
       <button class="kb-btn" data-kb="1">1</button>
       <button class="kb-btn" data-kb="2">2</button>
       <button class="kb-btn" data-kb="3">3</button>
-      <button class="kb-btn next span2" data-kb="NEXT" id="kb-next-btn">→</button>
+      <button class="kb-btn next" data-kb="NEXT" id="kb-next-btn">→</button>
     </div>
     <div class="kb-row">
       <button class="kb-btn clear" data-kb="CLEAR">🗑</button>
       <button class="kb-btn" data-kb="0">0</button>
       <button class="kb-btn" data-kb=".">.</button>
-      <button class="kb-btn ok span2" data-kb="OK">OK</button>
+      <button class="kb-btn ok" data-kb="OK">OK</button>
     </div>
   `;
   kbBindRows();
