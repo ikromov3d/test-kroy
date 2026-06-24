@@ -433,7 +433,7 @@ body {
   </div>
 
 <!-- BOTTOM BAR -->
-<div class="bottom-bar">
+<div class="bottom-bar" id="bottom-bar">
   <button class="btn-secondary" id="btn-left" onclick="onLeftBtn()">⬅️ Orqaga</button>
   <button class="btn-main" id="btn-right" onclick="onRightBtn()">🎨 Kromka →</button>
 </div>
@@ -1120,6 +1120,7 @@ function kbOpen(rowIdx, fieldIdx) {
   if (el) el.classList.add("kb-active");
   kbRefreshDisplay();
   document.getElementById("custom-kb").classList.add("visible");
+  document.getElementById("bottom-bar").style.display = "none";
   _kbUpdateLayout();
   requestAnimationFrame(() => requestAnimationFrame(() => _kbScrollToActive()));
   if (_kbIsNaimMode) kbSetNumMode();
@@ -1157,7 +1158,7 @@ function kbClose() {
   kbCurrentVal = "";
   document.querySelectorAll(".size-field.kb-active, .detail-name-input.kb-active").forEach(e => e.classList.remove("kb-active"));
   document.getElementById("custom-kb").classList.remove("visible");
-
+  document.getElementById("bottom-bar").style.display = "";
   if (_kbIsNaimMode) kbSetNumMode();
   document.getElementById("kb-alpha").style.display = "none";
   naimDropdownClose();
