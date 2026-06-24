@@ -68,7 +68,6 @@ body {
   min-height: 24px;
 }
 .scroll-thumb.visible { opacity: 0.5; }
-.screen.active { display: block; }
 
 /* SECTION LABEL */
 .section-label {
@@ -541,8 +540,44 @@ const SHEET_SIZES = [[2440,1220],[2500,1830],[2750,1830],[2800,2070]];
 
   // Delete va row tap — event delegation
   const listEl = document.getElementById("detail-list");
-  const listHandler = (e) => {
-    // Delete tugmasi
+  let _listTouchStartX = 0, _listTouchStartY = 0, _listMoved = false;
+
+  listEl.addEventListener("touchstart", e => {
+    _listTouchStartX = e.touches[0].clientX;
+    _listTouchStartY = e.touches[0].clientY;
+    _listMoved = false;
+    // Delete tugmasi — darhol
+    const delBtn = e.target.closest("[data-del]");
+    if (delBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      deleteRow(parseInt(delBtn.dataset.del));
+    }
+  }, { passive: false });
+
+  listEl.addEventListener("touchmove", e => {
+    const dx = Math.abs(e.touches[0].clientX - _listTouchStartX);
+    const dy = Math.abs(e.touches[0].clientY - _listTouchStartY);
+    if (dx > 6 || dy > 6) _listMoved = true;
+  }, { passive: true });
+
+  listEl.addEventListener("touchend", e => {
+    if (_listMoved) return;
+    const row = e.target.closest(".detail-row");
+    if (!row) return;
+    if (e.target.tagName === "INPUT" || e.target.tagName === "BUTTON") return;
+    const idx = parseInt(row.id.replace("row-",""));
+    if (isNaN(idx)) return;
+    if (row.classList.contains("editing")) {
+      // Aktiv qatorga qayta bosilsa — deactivate
+      closeAllEdits();
+    } else {
+      e.preventDefault();
+      startEdit(idx);
+    }
+  }, { passive: false });
+
+  listEl.addEventListener("mousedown", e => {
     const delBtn = e.target.closest("[data-del]");
     if (delBtn) {
       e.preventDefault();
@@ -550,17 +585,18 @@ const SHEET_SIZES = [[2440,1220],[2500,1830],[2750,1830],[2800,2070]];
       deleteRow(parseInt(delBtn.dataset.del));
       return;
     }
-    // Qatorga tap — tahrirlash
     const row = e.target.closest(".detail-row");
     if (!row) return;
     if (e.target.tagName === "INPUT" || e.target.tagName === "BUTTON") return;
-    if (row.classList.contains("editing")) return;
-    e.preventDefault();
     const idx = parseInt(row.id.replace("row-",""));
-    if (!isNaN(idx)) startEdit(idx);
-  };
-  listEl.addEventListener("touchstart", listHandler, { passive: false });
-  listEl.addEventListener("mousedown",  listHandler);
+    if (isNaN(idx)) return;
+    if (row.classList.contains("editing")) {
+      closeAllEdits();
+    } else {
+      e.preventDefault();
+      startEdit(idx);
+    }
+  });
 })();
 
 // ── TAB SWITCH ────────────────────────────────────────────────────────────────
@@ -1132,8 +1168,22 @@ function _kbUpdateLayout() {
 function _kbScrollToActive() {
   if (kbActiveRow === -1) return;
   const row = document.getElementById("row-" + kbActiveRow);
-  if (!row) return;
-  row.scrollIntoView({ block: "nearest", behavior: "instant" });
+  const panel = document.getElementById("screen-list-scroll");
+  if (!row || !panel) return;
+  // panel ichida row ning pozitsiyasi
+  const panelTop = panel.getBoundingClientRect().top;
+  const rowTop = row.getBoundingClientRect().top;
+  const rowBottom = row.getBoundingClientRect().bottom;
+  const panelH = panel.clientHeight;
+  const relTop = rowTop - panelTop; // panel ichida row ning yuqorisi
+  const relBottom = rowBottom - panelTop; // panel ichida row ning pastki qirrasi
+  if (relBottom > panelH - 4) {
+    // Qator pastda ko'rinmayapti — pastga scroll
+    panel.scrollTop += relBottom - panelH + 8;
+  } else if (relTop < 4) {
+    // Qator yuqorida ko'rinmayapti — yuqoriga scroll
+    panel.scrollTop += relTop - 8;
+  }
   if (window._updateScrollThumb) window._updateScrollThumb();
 }
 
