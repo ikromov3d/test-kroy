@@ -408,7 +408,7 @@ body {
     <div class="kb-tab" id="kb-tab-0">Uzun</div>
     <div class="kb-tab" id="kb-tab-1">Keng</div>
     <div class="kb-tab" id="kb-tab-2">Son</div>
-    <div class="kb-tab" id="kb-tab-3">Nom</div>
+    <div class="kb-tab" id="kb-tab-3" onclick="kbSetNaimMode()">Nom</div>
   </div>
   <div class="kb-display">
     <div class="kb-display-val" id="kb-val">—</div>
@@ -971,7 +971,7 @@ function sendData() {
 }
 
 // ── CUSTOM KEYBOARD ───────────────────────────────────────────────────────────
-const KB_FIELDS = ["uzun","keng","son","nom"];
+const KB_FIELDS = ["uzun","keng","son"];
 let kbActiveRow = -1;
 let kbActiveField = 0;
 let kbCurrentVal = "";
@@ -1088,7 +1088,6 @@ function kbOpen(rowIdx, fieldIdx) {
   const _kbH = document.getElementById("custom-kb").offsetHeight;
   document.querySelector(".bottom-bar").style.bottom = _kbH + "px";
   document.body.style.paddingBottom = (_kbH + 80) + "px";
-  if (fieldIdx === 3) { kbSetNaimMode(); return; }
   if (_kbIsNaimMode) kbSetNumMode();
 }
 
@@ -1103,6 +1102,7 @@ function kbClose() {
   if (_kbIsNaimMode) kbSetNumMode();
   document.getElementById("kb-alpha").style.display = "none";
   naimDropdownClose();
+  const nomTab2 = document.getElementById("kb-tab-3"); if(nomTab2) nomTab2.classList.remove("active");
 }
 
 function kbRefreshDisplay() {
@@ -1113,9 +1113,9 @@ function kbRefreshDisplay() {
   document.getElementById("kb-eval").textContent =
     (res > 0 && res !== orig && val.match(/[\+\-\*\/]/)) ? "= " + res : "";
   const nextBtn = document.getElementById("kb-next-btn");
-  nextBtn.textContent = kbActiveField < KB_FIELDS.length - 1 ? "→" : "OK";
+  nextBtn.textContent = "→";
   // Tabs highlight
-  [0,1,2,3].forEach(fi => {
+  [0,1,2].forEach(fi => {
     const t = document.getElementById(`kb-tab-${fi}`);
     if (t) t.classList.toggle("active", fi === kbActiveField);
   });
@@ -1128,7 +1128,6 @@ function kbRefreshDisplay() {
 
 function kbSwitchField(fieldIdx) {
   kbConfirmField();
-  if (fieldIdx === 3) { kbActiveField = 3; kbSetNaimMode(); return; }
   kbActiveField = fieldIdx;
   const f = KB_FIELDS[fieldIdx];
   const el = document.getElementById(`f-${f}-${kbActiveRow}`);
@@ -1173,30 +1172,31 @@ function kbConfirmField() {
   // kbCurrentVal ni o'zgartirmaymiz — keyingi field uchun alohida o'qiladi
 }
 
+const _NOM_FIELD = "nom"; // alohida, KB_FIELDS da yo'q
+
 function kbNext() {
   kbConfirmField();
   if (kbActiveField < KB_FIELDS.length - 1) {
+    // uzun→keng yoki keng→son
     kbActiveField++;
-    if (kbActiveField === KB_FIELDS.length - 1) {
-      // Nom fieldi
-      kbSetNaimMode();
-      const naimEl2 = kbActiveRow !== -1 ? document.getElementById("f-naim-" + kbActiveRow) : null;
-      if (naimEl2) naimDropdownShow(naimEl2);
-    } else {
-      const f = KB_FIELDS[kbActiveField];
-      const el = document.getElementById(`f-${f}-${kbActiveRow}`);
-      const raw = el ? el.value : "";
-      const stored = details[kbActiveRow] ? details[kbActiveRow][f] : 0;
-      const defaultVals = { uzun: 0, keng: 0, son: 1 };
-      const isDefault = stored === defaultVals[f] && String(stored) === raw;
-      kbCurrentVal = isDefault ? "" : raw;
-      document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
-      if (el) el.classList.add("kb-active");
-      kbRefreshDisplay();
-      kbSetNumMode();
-    }
+    const f = KB_FIELDS[kbActiveField];
+    const el = document.getElementById(`f-${f}-${kbActiveRow}`);
+    const raw = el ? el.value : "";
+    const stored = details[kbActiveRow] ? details[kbActiveRow][f] : 0;
+    const defaultVals = { uzun: 0, keng: 0, son: 1 };
+    const isDefault = stored === defaultVals[f] && String(stored) === raw;
+    kbCurrentVal = isDefault ? "" : raw;
+    document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
+    if (el) el.classList.add("kb-active");
+    kbRefreshDisplay();
+    kbSetNumMode();
+  } else if (!_kbIsNaimMode) {
+    // son → nom
+    kbSetNaimMode();
+    const naimEl2 = kbActiveRow !== -1 ? document.getElementById("f-naim-" + kbActiveRow) : null;
+    if (naimEl2) naimDropdownShow(naimEl2);
   } else {
-    // Nom fieldida OK bosish — yangi qator
+    // nom fieldida → yangi qator
     const row = kbActiveRow;
     if (row !== -1) saveEdit(row);
     kbClose();
@@ -1245,6 +1245,9 @@ function kbSetNumMode() {
 function kbSetNaimMode() {
   _kbIsNaimMode = true;
   document.querySelectorAll(".size-field.kb-active, .detail-name-input.kb-active").forEach(e => e.classList.remove("kb-active"));
+  [0,1,2].forEach(fi => { const t = document.getElementById("kb-tab-"+fi); if(t) t.classList.remove("active"); });
+  const nomTab = document.getElementById("kb-tab-3");
+  if (nomTab) nomTab.classList.add("active");
   const naimEl = kbActiveRow !== -1 ? document.getElementById("f-naim-" + kbActiveRow) : null;
   if (naimEl) {
     naimEl.removeAttribute("readonly");
