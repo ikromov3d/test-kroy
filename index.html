@@ -277,11 +277,14 @@ body {
 .kb-display-label { font-size: 12px; color: var(--hint); min-width: 36px; }
 .kb-display-val { flex: 1; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
 .kb-display-eval { font-size: 13px; color: var(--green); min-width: 60px; text-align: right; }
-.kb-rows { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.kb-rows { display: flex; flex-direction: column; gap: 5px; padding: 0 4px; }
+.kb-row { display: flex; gap: 5px; }
+.kb-row .kb-btn { flex: 1; }
+.kb-row .kb-btn.span2 { flex: 2; }
 .kb-btn {
-  height: 58px; border: none; border-radius: 10px;
+  height: 52px; border: none; border-radius: 9px;
   background: var(--bg); color: var(--text);
-  font-size: 24px; font-weight: 500; cursor: pointer;
+  font-size: 22px; font-weight: 500; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: opacity 0.1s;
   -webkit-tap-highlight-color: transparent;
@@ -416,31 +419,37 @@ body {
     <div class="kb-display-eval" id="kb-eval"></div>
   </div>
   <div class="kb-rows" id="kb-rows">
-    <button class="kb-btn op" data-kb="("  >(</button>
-    <button class="kb-btn op" data-kb=")"  >)</button>
-    <button class="kb-btn op" data-kb="/"  >÷</button>
-    <button class="kb-btn op" data-kb="*"  >×</button>
-    <button class="kb-btn del" data-kb="DEL">⌫</button>
-
-    <button class="kb-btn" data-kb="7">7</button>
-    <button class="kb-btn" data-kb="8">8</button>
-    <button class="kb-btn" data-kb="9">9</button>
-    <button class="kb-btn op" data-kb="-" style="grid-column:span 2">−</button>
-
-    <button class="kb-btn" data-kb="4">4</button>
-    <button class="kb-btn" data-kb="5">5</button>
-    <button class="kb-btn" data-kb="6">6</button>
-    <button class="kb-btn op" data-kb="+" style="grid-column:span 2">+</button>
-
-    <button class="kb-btn" data-kb="1">1</button>
-    <button class="kb-btn" data-kb="2">2</button>
-    <button class="kb-btn" data-kb="3">3</button>
-    <button class="kb-btn next" data-kb="NEXT" id="kb-next-btn" style="grid-column:span 2">→</button>
-
-    <button class="kb-btn clear" data-kb="CLEAR">🗑</button>
-    <button class="kb-btn" data-kb="0">0</button>
-    <button class="kb-btn" data-kb=".">.</button>
-    <button class="kb-btn ok" data-kb="OK" style="grid-column:span 2">OK</button>
+    <div class="kb-row">
+      <button class="kb-btn op" data-kb="(">(</button>
+      <button class="kb-btn op" data-kb=")">)</button>
+      <button class="kb-btn op" data-kb="/">÷</button>
+      <button class="kb-btn op" data-kb="*">×</button>
+      <button class="kb-btn del" data-kb="DEL">⌫</button>
+    </div>
+    <div class="kb-row">
+      <button class="kb-btn" data-kb="7">7</button>
+      <button class="kb-btn" data-kb="8">8</button>
+      <button class="kb-btn" data-kb="9">9</button>
+      <button class="kb-btn op span2" data-kb="-">−</button>
+    </div>
+    <div class="kb-row">
+      <button class="kb-btn" data-kb="4">4</button>
+      <button class="kb-btn" data-kb="5">5</button>
+      <button class="kb-btn" data-kb="6">6</button>
+      <button class="kb-btn op span2" data-kb="+">+</button>
+    </div>
+    <div class="kb-row">
+      <button class="kb-btn" data-kb="1">1</button>
+      <button class="kb-btn" data-kb="2">2</button>
+      <button class="kb-btn" data-kb="3">3</button>
+      <button class="kb-btn next span2" data-kb="NEXT" id="kb-next-btn">→</button>
+    </div>
+    <div class="kb-row">
+      <button class="kb-btn clear" data-kb="CLEAR">🗑</button>
+      <button class="kb-btn" data-kb="0">0</button>
+      <button class="kb-btn" data-kb=".">.</button>
+      <button class="kb-btn ok span2" data-kb="OK">OK</button>
+    </div>
   </div>
   <div id="kb-alpha" style="display:none;"></div>
 </div>
@@ -674,7 +683,7 @@ function startEdit(i) {
   }
 
   kbOpen(i, 0);
-  setTimeout(_kbScrollToActive, 380);
+  // scroll visualViewport resize orqali chaqiriladi
 }
 
 function saveEdit(i) {
@@ -722,7 +731,7 @@ function addRow() {
   renderList();
   const idx = details.length-1;
   startEdit(idx);
-  setTimeout(_kbScrollToActive, 380);
+  // scroll visualViewport resize orqali chaqiriladi
 }
 
 // ── RENDER KROMKA ─────────────────────────────────────────────────────────────
@@ -1079,6 +1088,7 @@ function kbOpen(rowIdx, fieldIdx) {
   kbRefreshDisplay();
   document.getElementById("custom-kb").classList.add("visible");
   _kbUpdateLayout();
+  if (!_kbScrollLock) setTimeout(_kbScrollToActive, 50);
   if (_kbIsNaimMode) kbSetNumMode();
 }
 
@@ -1235,27 +1245,37 @@ function kbSetNumMode() {
   naimDropdownClose();
   document.querySelectorAll(".detail-name-input").forEach(el => el.setAttribute("readonly", ""));
   document.getElementById("kb-rows").innerHTML = `
-    <button class="kb-btn op" data-kb="(">(</button>
-    <button class="kb-btn op" data-kb=")">)</button>
-    <button class="kb-btn op" data-kb="/">÷</button>
-    <button class="kb-btn op" data-kb="*">×</button>
-    <button class="kb-btn del" data-kb="DEL">⌫</button>
-    <button class="kb-btn" data-kb="7">7</button>
-    <button class="kb-btn" data-kb="8">8</button>
-    <button class="kb-btn" data-kb="9">9</button>
-    <button class="kb-btn op" data-kb="-" style="grid-column:span 2">−</button>
-    <button class="kb-btn" data-kb="4">4</button>
-    <button class="kb-btn" data-kb="5">5</button>
-    <button class="kb-btn" data-kb="6">6</button>
-    <button class="kb-btn op" data-kb="+" style="grid-column:span 2">+</button>
-    <button class="kb-btn" data-kb="1">1</button>
-    <button class="kb-btn" data-kb="2">2</button>
-    <button class="kb-btn" data-kb="3">3</button>
-    <button class="kb-btn next" data-kb="NEXT" id="kb-next-btn" style="grid-column:span 2">→</button>
-    <button class="kb-btn clear" data-kb="CLEAR">🗑</button>
-    <button class="kb-btn" data-kb="0">0</button>
-    <button class="kb-btn" data-kb=".">.</button>
-    <button class="kb-btn ok" data-kb="OK" style="grid-column:span 2">OK</button>
+    <div class="kb-row">
+      <button class="kb-btn op" data-kb="(">(</button>
+      <button class="kb-btn op" data-kb=")">)</button>
+      <button class="kb-btn op" data-kb="/">÷</button>
+      <button class="kb-btn op" data-kb="*">×</button>
+      <button class="kb-btn del" data-kb="DEL">⌫</button>
+    </div>
+    <div class="kb-row">
+      <button class="kb-btn" data-kb="7">7</button>
+      <button class="kb-btn" data-kb="8">8</button>
+      <button class="kb-btn" data-kb="9">9</button>
+      <button class="kb-btn op span2" data-kb="-">−</button>
+    </div>
+    <div class="kb-row">
+      <button class="kb-btn" data-kb="4">4</button>
+      <button class="kb-btn" data-kb="5">5</button>
+      <button class="kb-btn" data-kb="6">6</button>
+      <button class="kb-btn op span2" data-kb="+">+</button>
+    </div>
+    <div class="kb-row">
+      <button class="kb-btn" data-kb="1">1</button>
+      <button class="kb-btn" data-kb="2">2</button>
+      <button class="kb-btn" data-kb="3">3</button>
+      <button class="kb-btn next span2" data-kb="NEXT" id="kb-next-btn">→</button>
+    </div>
+    <div class="kb-row">
+      <button class="kb-btn clear" data-kb="CLEAR">🗑</button>
+      <button class="kb-btn" data-kb="0">0</button>
+      <button class="kb-btn" data-kb=".">.</button>
+      <button class="kb-btn ok span2" data-kb="OK">OK</button>
+    </div>
   `;
   kbBindRows();
 }
@@ -1292,7 +1312,7 @@ function kbRenderAlpha(lang) {
   const SIDE = 44;
   const PAD = 8;
 
-  const btnBase = `height:52px;border-radius:8px;background:var(--bg);color:var(--text);border:none;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;`;
+  const btnBase = `height:50px;border-radius:8px;background:var(--bg);color:var(--text);border:none;font-size:17px;font-weight:500;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;`;
   const sideStyle = `flex:0 0 ${SIDE}px;height:52px;border-radius:8px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;`;
 
   let html = "";
@@ -1556,7 +1576,7 @@ function naimPick(val) {
 if (window.visualViewport) {
   window.visualViewport.addEventListener("resize", () => {
     _kbUpdateLayout();
-    if (!_kbScrollLock) setTimeout(_kbScrollToActive, 100);
+    if (!_kbScrollLock) setTimeout(_kbScrollToActive, 50);
   });
 }
 
