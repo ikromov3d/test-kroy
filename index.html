@@ -408,6 +408,7 @@ body {
     <div class="kb-tab" id="kb-tab-0">Uzun</div>
     <div class="kb-tab" id="kb-tab-1">Keng</div>
     <div class="kb-tab" id="kb-tab-2">Son</div>
+    <div class="kb-tab" id="kb-tab-3">Nom</div>
   </div>
   <div class="kb-display">
     <div class="kb-display-val" id="kb-val">—</div>
@@ -970,7 +971,7 @@ function sendData() {
 }
 
 // ── CUSTOM KEYBOARD ───────────────────────────────────────────────────────────
-const KB_FIELDS = ["uzun","keng","son"];
+const KB_FIELDS = ["uzun","keng","son","nom"];
 let kbActiveRow = -1;
 let kbActiveField = 0;
 let kbCurrentVal = "";
@@ -1087,6 +1088,7 @@ function kbOpen(rowIdx, fieldIdx) {
   const _kbH = document.getElementById("custom-kb").offsetHeight;
   document.querySelector(".bottom-bar").style.bottom = _kbH + "px";
   document.body.style.paddingBottom = (_kbH + 80) + "px";
+  if (fieldIdx === 3) { kbSetNaimMode(); return; }
   if (_kbIsNaimMode) kbSetNumMode();
 }
 
@@ -1111,9 +1113,9 @@ function kbRefreshDisplay() {
   document.getElementById("kb-eval").textContent =
     (res > 0 && res !== orig && val.match(/[\+\-\*\/]/)) ? "= " + res : "";
   const nextBtn = document.getElementById("kb-next-btn");
-  nextBtn.textContent = kbActiveField < KB_FIELDS.length - 1 ? "→" : "✓ Nom";
+  nextBtn.textContent = kbActiveField < KB_FIELDS.length - 1 ? "→" : "OK";
   // Tabs highlight
-  [0,1,2].forEach(fi => {
+  [0,1,2,3].forEach(fi => {
     const t = document.getElementById(`kb-tab-${fi}`);
     if (t) t.classList.toggle("active", fi === kbActiveField);
   });
@@ -1126,6 +1128,7 @@ function kbRefreshDisplay() {
 
 function kbSwitchField(fieldIdx) {
   kbConfirmField();
+  if (fieldIdx === 3) { kbActiveField = 3; kbSetNaimMode(); return; }
   kbActiveField = fieldIdx;
   const f = KB_FIELDS[fieldIdx];
   const el = document.getElementById(`f-${f}-${kbActiveRow}`);
@@ -1321,6 +1324,32 @@ function kbBindAlpha() {
   const clone = alpha.cloneNode(true);
   alpha.parentNode.replaceChild(clone, alpha);
   _kbBind(document.getElementById("kb-alpha"));
+  _bindChipScroll();
+}
+
+function _bindChipScroll() {
+  document.querySelectorAll(".naim-chip-row").forEach(row => {
+    let startX = 0, startY = 0, moved = false;
+    row.addEventListener("touchstart", e => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      moved = false;
+    }, { passive: true });
+    row.addEventListener("touchmove", e => {
+      const dx = Math.abs(e.touches[0].clientX - startX);
+      const dy = Math.abs(e.touches[0].clientY - startY);
+      if (dx > 6 || dy > 6) moved = true;
+    }, { passive: true });
+    row.addEventListener("touchend", e => {
+      if (moved) return;
+      const chip = e.target.closest(".naim-chip");
+      if (chip) {
+        e.preventDefault();
+        const md = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+        chip.dispatchEvent(md);
+      }
+    }, { passive: false });
+  });
 }
 
 function kbOk() {
@@ -1456,10 +1485,10 @@ function naimChipsUpdate() {
     : NAIM_LIST;
 
   const makeChip = (n) => {
-    if (!val) return `<div class="naim-chip" onmousedown="naimPick('${n}')" ontouchstart="naimPick('${n}')">${n}</div>`;
+    if (!val) return `<div class="naim-chip" onmousedown="naimPick('${n}')">${n}</div>`;
     const idx = n.toLowerCase().indexOf(val.toLowerCase());
     const hi = n.slice(0, idx) + `<span class="naim-match">${n.slice(idx, idx+val.length)}</span>` + n.slice(idx+val.length);
-    return `<div class="naim-chip" onmousedown="naimPick('${n}')" ontouchstart="naimPick('${n}')">${hi}</div>`;
+    return `<div class="naim-chip" onmousedown="naimPick('${n}')">${hi}</div>`;
   };
 
   const half = Math.ceil(filtered.length / 2);
@@ -1472,6 +1501,7 @@ function naimChipsUpdate() {
   if (!kbEl) return;
   kbEl.innerHTML = filtered.length ? html : "";
   kbEl.classList.toggle("has-chips", filtered.length > 0);
+  if (filtered.length) _bindChipScroll();
 }
 
 function naimPick(val) {
