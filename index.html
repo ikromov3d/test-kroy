@@ -674,7 +674,7 @@ function startEdit(i) {
   }
 
   kbOpen(i, 0);
-  setTimeout(_kbScrollToActive, 120);
+  setTimeout(_kbScrollToActive, 380);
 }
 
 function saveEdit(i) {
@@ -722,7 +722,7 @@ function addRow() {
   renderList();
   const idx = details.length-1;
   startEdit(idx);
-  setTimeout(_kbScrollToActive, 120);
+  setTimeout(_kbScrollToActive, 380);
 }
 
 // ── RENDER KROMKA ─────────────────────────────────────────────────────────────
@@ -964,6 +964,7 @@ function sendData() {
 
 // ── CUSTOM KEYBOARD ───────────────────────────────────────────────────────────
 const KB_FIELDS = ["uzun","keng","son"];
+let _kbScrollLock = false;
 let kbActiveRow = -1;
 let kbActiveField = 0;
 let kbCurrentVal = "";
@@ -1089,6 +1090,7 @@ function _kbUpdateLayout() {
 }
 
 function _kbScrollToActive() {
+  if (_kbScrollLock) return;
   if (kbActiveRow === -1) return;
   const row = document.getElementById("row-" + kbActiveRow);
   if (!row) return;
@@ -1100,11 +1102,12 @@ function _kbScrollToActive() {
   const scrollOffset = vv ? (window.scrollY + vv.offsetTop) : window.scrollY;
   if (rect.bottom > viewH || rect.top < 8) {
     const target = scrollOffset + rect.top - viewH / 2 + rect.height / 2;
-    window.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
+    window.scrollTo({ top: Math.max(0, target), behavior: "instant" });
   }
 }
 
 function kbClose() {
+  _kbScrollLock = true;
   if (kbActiveRow >= 0) kbConfirmField();
   kbActiveRow = -1;
   kbCurrentVal = "";
@@ -1116,6 +1119,7 @@ function kbClose() {
   document.getElementById("kb-alpha").style.display = "none";
   naimDropdownClose();
   const nomTab2 = document.getElementById("kb-tab-3"); if(nomTab2) nomTab2.classList.remove("active");
+  setTimeout(() => { _kbScrollLock = false; }, 350);
 }
 
 function kbRefreshDisplay() {
@@ -1552,7 +1556,7 @@ function naimPick(val) {
 if (window.visualViewport) {
   window.visualViewport.addEventListener("resize", () => {
     _kbUpdateLayout();
-    setTimeout(_kbScrollToActive, 100);
+    if (!_kbScrollLock) setTimeout(_kbScrollToActive, 100);
   });
 }
 
