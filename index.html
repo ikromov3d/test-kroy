@@ -257,6 +257,20 @@ body {
 .kb-recommend-row { display: none; }
 .kb-btn.clear { background: rgba(255,69,58,0.12); color: var(--red); font-size: 13px; font-weight: 600; }
 .kb-btn.globe { background: rgba(142,142,147,0.15); color: var(--text); font-size: 18px; }
+.kb-scroll-btn {
+  position: fixed; left: 0; z-index: 501;
+  width: 28px; display: none;
+  flex-direction: column; align-items: center; justify-content: center;
+  background: var(--bg2); border-right: 1px solid var(--sep);
+  touch-action: none; cursor: grab; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.kb-scroll-btn.visible { display: flex; }
+.kb-scroll-btn::after {
+  content: "⋮⋮";
+  font-size: 16px; color: var(--hint); letter-spacing: -2px;
+  writing-mode: vertical-rl;
+}
 .kb-field-tabs {
   display: flex; gap: 6px; margin-bottom: 6px;
 }
@@ -407,6 +421,7 @@ body {
 </div>
 
 <!-- CUSTOM KEYBOARD -->
+<div class="kb-scroll-btn" id="kb-scroll-btn"></div>
 <div class="custom-kb" id="custom-kb">
   <div class="naim-chips-kb" id="naim-chips-kb"></div>
   <div class="kb-field-tabs" id="kb-field-tabs">
@@ -1104,6 +1119,13 @@ function _kbUpdateLayout() {
   const kbH = kb.offsetHeight || 0;
   document.querySelector(".bottom-bar").style.bottom = kbH + "px";
   document.body.style.paddingBottom = (kbH + 80) + "px";
+  // Scroll button
+  const scrollBtn = document.getElementById("kb-scroll-btn");
+  if (scrollBtn) {
+    scrollBtn.style.bottom = "0px";
+    scrollBtn.style.height = kbH + "px";
+    scrollBtn.classList.toggle("visible", kb.classList.contains("visible"));
+  }
 }
 
 function _kbScrollToActive() {
@@ -1113,12 +1135,22 @@ function _kbScrollToActive() {
   if (!row) return;
   const kb = document.getElementById("custom-kb");
   const kbH = kb && kb.classList.contains("visible") ? kb.offsetHeight : 0;
+  // Keyboard ichidagi yuqori maydon balandligi (chips + tabs + display)
+  const chipsEl = document.getElementById("naim-chips-kb");
+  const chipsH = chipsEl ? chipsEl.offsetHeight : 0;
+  const tabsEl = document.getElementById("kb-field-tabs");
+  const tabsH = tabsEl ? tabsEl.offsetHeight : 0;
+  const dispEl = document.querySelector(".kb-display");
+  const dispH = dispEl ? dispEl.offsetHeight : 0;
+  const kbTopH = chipsH + tabsH + dispH + 16; // 16px gap/padding
   const vv = window.visualViewport;
   const viewH = (vv ? vv.height : window.innerHeight) - kbH - 12;
   const rect = row.getBoundingClientRect();
   const scrollOffset = vv ? (window.scrollY + vv.offsetTop) : window.scrollY;
-  if (rect.bottom > viewH || rect.top < 8) {
-    const target = scrollOffset + rect.top - viewH / 2 + rect.height / 2;
+  // Qator keyboard tepasidagi maydonga tushmasligini ta'minlash
+  const topMargin = kbTopH + 8;
+  if (rect.bottom > viewH || rect.top < topMargin) {
+    const target = scrollOffset + rect.top - topMargin;
     window.scrollTo({ top: Math.max(0, target), behavior: "instant" });
   }
 }
@@ -1132,6 +1164,8 @@ function kbClose() {
   document.getElementById("custom-kb").classList.remove("visible");
   document.querySelector(".bottom-bar").style.bottom = "";
   document.body.style.paddingBottom = "80px";
+  const _sb = document.getElementById("kb-scroll-btn");
+  if (_sb) _sb.classList.remove("visible");
   if (_kbIsNaimMode) kbSetNumMode();
   document.getElementById("kb-alpha").style.display = "none";
   naimDropdownClose();
@@ -1586,6 +1620,37 @@ if (window.visualViewport) {
     if (!_kbScrollLock) setTimeout(_kbScrollToActive, 50);
   });
 }
+
+// ── Scroll button drag ────────────────────────────────────────────────────────
+(function() {
+  let _dragY = 0, _dragScrollY = 0, _dragging = false;
+
+  function onStart(e) {
+    _dragging = true;
+    _dragY = e.touches ? e.touches[0].clientY : e.clientY;
+    _dragScrollY = window.scrollY;
+    e.preventDefault();
+  }
+  function onMove(e) {
+    if (!_dragging) return;
+    const y = e.touches ? e.touches[0].clientY : e.clientY;
+    const delta = _dragY - y; // yuqoriga suring — pastga scroll
+    window.scrollTo({ top: _dragScrollY + delta * 1.5, behavior: "auto" });
+    e.preventDefault();
+  }
+  function onEnd() { _dragging = false; }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const btn = document.getElementById("kb-scroll-btn");
+    if (!btn) return;
+    btn.addEventListener("touchstart", onStart, { passive: false });
+    btn.addEventListener("touchmove",  onMove,  { passive: false });
+    btn.addEventListener("touchend",   onEnd);
+    btn.addEventListener("mousedown",  onStart);
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup",   onEnd);
+  });
+})();
 
 </script>
 </body>
