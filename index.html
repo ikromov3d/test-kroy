@@ -22,14 +22,13 @@
 body {
   background: var(--bg); color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 15px; min-height: 100vh; padding-bottom: 80px;
-  overscroll-behavior-y: none;
-  touch-action: pan-y;
+  font-size: 15px; height: 100dvh; overflow: hidden;
+  display: flex; flex-direction: column;
 }
 
 /* HEADER */
 .header {
-  position: sticky; top: 0; z-index: 100;
+  position: relative; flex-shrink: 0; z-index: 100;
   background: var(--bg); border-bottom: 1px solid var(--sep);
   display: flex; align-items: center; height: 52px; padding: 0 12px; gap: 8px;
 }
@@ -43,7 +42,32 @@ body {
 .tab.active { background: var(--btn); color: var(--btn-text); }
 
 /* SCREENS */
-.screen { display: none; padding: 12px 0; }
+.screen { display: none; flex: 1; overflow: hidden; min-height: 0; }
+.screen.active { display: flex; flex-direction: column; }
+.screen-scroll-wrap {
+  flex: 1; display: flex; min-height: 0; position: relative;
+}
+.screen-scroll {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding-bottom: 12px;
+  scrollbar-width: none;
+}
+.screen-scroll::-webkit-scrollbar { display: none; }
+.scroll-track {
+  width: 4px; background: transparent;
+  position: absolute; right: 2px; top: 4px; bottom: 4px;
+  border-radius: 2px; pointer-events: none;
+}
+.scroll-thumb {
+  width: 4px; background: var(--hint);
+  border-radius: 2px; position: absolute;
+  right: 0; opacity: 0;
+  transition: opacity 0.2s;
+  min-height: 24px;
+}
+.scroll-thumb.visible { opacity: 0.5; }
 .screen.active { display: block; }
 
 /* SECTION LABEL */
@@ -219,7 +243,7 @@ body {
 
 /* BOTTOM BAR */
 .bottom-bar {
-  position: fixed; bottom: 0; left: 0; right: 0;
+  position: relative; flex-shrink: 0;
   background: var(--bg); border-top: 1px solid var(--sep);
   padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom));
   display: flex; gap: 8px;
@@ -247,30 +271,15 @@ body {
 
 /* CUSTOM KEYBOARD */
 .custom-kb {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
+  flex-shrink: 0;
   background: var(--bg2); border-top: 1px solid var(--sep);
   padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
-  transform: translateY(100%);
-  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+  display: none;
 }
-.custom-kb.visible { transform: translateY(0); }
+.custom-kb.visible { display: block; }
 .kb-recommend-row { display: none; }
 .kb-btn.clear { background: rgba(255,69,58,0.12); color: var(--red); font-size: 13px; font-weight: 600; }
 .kb-btn.globe { background: rgba(142,142,147,0.15); color: var(--text); font-size: 18px; }
-.kb-scroll-btn {
-  position: fixed; left: 0; z-index: 501;
-  width: 28px; display: none;
-  flex-direction: column; align-items: center; justify-content: center;
-  background: var(--bg2); border-right: 1px solid var(--sep);
-  touch-action: none; cursor: grab; user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-.kb-scroll-btn.visible { display: flex; }
-.kb-scroll-btn::after {
-  content: "⋮⋮";
-  font-size: 16px; color: var(--hint); letter-spacing: -2px;
-  writing-mode: vertical-rl;
-}
 .kb-field-tabs {
   display: flex; gap: 6px; margin-bottom: 6px;
 }
@@ -354,14 +363,21 @@ body {
 
 <!-- SCREEN 1: LIST -->
 <div class="screen active" id="screen-list">
-  <div style="height:10px"></div>
-  <div class="section-label">DETALLAR</div>
-  <div class="detail-list" id="detail-list"></div>
-  <button class="add-row-btn" onclick="addRow()">＋ Qator qo'shish</button>
+  <div class="screen-scroll-wrap">
+  <div class="screen-scroll" id="screen-list-scroll">
+    <div style="height:10px"></div>
+    <div class="section-label">DETALLAR</div>
+    <div class="detail-list" id="detail-list"></div>
+    <button class="add-row-btn" onclick="addRow()">＋ Qator qo'shish</button>
+    <div style="height:16px"></div>
+  </div>
+  <div class="scroll-track"><div class="scroll-thumb" id="scroll-thumb"></div></div>
+  </div>
 </div>
 
 <!-- SCREEN 2: KROMKA -->
 <div class="screen" id="screen-krom">
+  <div class="screen-scroll">
   <div style="height:10px"></div>
   <div class="section-label">KROMKA TURLARI</div>
   <div class="tip-section">
@@ -383,9 +399,11 @@ body {
   <div class="section-label">TOMONLARNI BELGILANG</div>
   <div class="krom-list" id="krom-list"></div>
 </div>
+  </div>
 
 <!-- SCREEN 3: KROY -->
 <div class="screen" id="screen-kroy">
+  <div class="screen-scroll">
   <div style="height:10px"></div>
 
   <!-- Sozlamalar -->
@@ -413,6 +431,7 @@ body {
   <div class="section-label" id="result-label" style="display:none">NATIJA</div>
   <div class="kroy-result" id="kroy-result"></div>
 </div>
+  </div>
 
 <!-- BOTTOM BAR -->
 <div class="bottom-bar">
@@ -421,7 +440,6 @@ body {
 </div>
 
 <!-- CUSTOM KEYBOARD -->
-<div class="kb-scroll-btn" id="kb-scroll-btn"></div>
 <div class="custom-kb" id="custom-kb">
   <div class="naim-chips-kb" id="naim-chips-kb"></div>
   <div class="kb-field-tabs" id="kb-field-tabs">
@@ -989,7 +1007,6 @@ function sendData() {
 
 // ── CUSTOM KEYBOARD ───────────────────────────────────────────────────────────
 const KB_FIELDS = ["uzun","keng","son"];
-let _kbScrollLock = false;
 let kbActiveRow = -1;
 let kbActiveField = 0;
 let kbCurrentVal = "";
@@ -1102,75 +1119,35 @@ function kbOpen(rowIdx, fieldIdx) {
   document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
   if (el) el.classList.add("kb-active");
   kbRefreshDisplay();
-  const _wasVisible = document.getElementById("custom-kb").classList.contains("visible");
   document.getElementById("custom-kb").classList.add("visible");
   _kbUpdateLayout();
-  if (!_kbScrollLock) {
-    // Keyboard yangi ochilgan bo'lsa — visualViewport resize keyin scroll qiladi
-    // Keyboard allaqachon ochiq bo'lsa (field almashdi) — hoziroq scroll
-    if (_wasVisible) _kbScrollToActive();
-    else setTimeout(_kbScrollToActive, 50);
-  }
+  requestAnimationFrame(() => requestAnimationFrame(() => _kbScrollToActive()));
   if (_kbIsNaimMode) kbSetNumMode();
 }
 
 function _kbUpdateLayout() {
-  const kb = document.getElementById("custom-kb");
-  const kbH = kb.offsetHeight || 0;
-  document.querySelector(".bottom-bar").style.bottom = kbH + "px";
-  document.body.style.paddingBottom = (kbH + 80) + "px";
-  // Scroll button
-  const scrollBtn = document.getElementById("kb-scroll-btn");
-  if (scrollBtn) {
-    scrollBtn.style.bottom = "0px";
-    scrollBtn.style.height = kbH + "px";
-    scrollBtn.classList.toggle("visible", kb.classList.contains("visible"));
-  }
+  // Flex layout — keyboard va bottom-bar o'zi joyida, hech narsa kerak emas
 }
 
 function _kbScrollToActive() {
-  if (_kbScrollLock) return;
   if (kbActiveRow === -1) return;
   const row = document.getElementById("row-" + kbActiveRow);
   if (!row) return;
-  const kb = document.getElementById("custom-kb");
-  const kbH = kb && kb.classList.contains("visible") ? kb.offsetHeight : 0;
-  // Keyboard ichidagi yuqori maydon balandligi (chips + tabs + display)
-  const chipsEl = document.getElementById("naim-chips-kb");
-  const chipsH = chipsEl ? chipsEl.offsetHeight : 0;
-  const tabsEl = document.getElementById("kb-field-tabs");
-  const tabsH = tabsEl ? tabsEl.offsetHeight : 0;
-  const dispEl = document.querySelector(".kb-display");
-  const dispH = dispEl ? dispEl.offsetHeight : 0;
-  const kbTopH = chipsH + tabsH + dispH + 16; // 16px gap/padding
-  const vv = window.visualViewport;
-  const viewH = (vv ? vv.height : window.innerHeight) - kbH - 12;
-  const rect = row.getBoundingClientRect();
-  const scrollOffset = vv ? (window.scrollY + vv.offsetTop) : window.scrollY;
-  // Qator keyboard tepasidagi maydonga tushmasligini ta'minlash
-  const topMargin = kbTopH + 8;
-  if (rect.bottom > viewH || rect.top < topMargin) {
-    const target = scrollOffset + rect.top - topMargin;
-    window.scrollTo({ top: Math.max(0, target), behavior: "instant" });
-  }
+  row.scrollIntoView({ block: "nearest", behavior: "instant" });
+  if (window._updateScrollThumb) window._updateScrollThumb();
 }
 
 function kbClose() {
-  _kbScrollLock = true;
   if (kbActiveRow >= 0) kbConfirmField();
   kbActiveRow = -1;
   kbCurrentVal = "";
   document.querySelectorAll(".size-field.kb-active, .detail-name-input.kb-active").forEach(e => e.classList.remove("kb-active"));
   document.getElementById("custom-kb").classList.remove("visible");
-  document.querySelector(".bottom-bar").style.bottom = "";
-  document.body.style.paddingBottom = "80px";
-  const _sb = document.getElementById("kb-scroll-btn");
-  if (_sb) _sb.classList.remove("visible");
+
   if (_kbIsNaimMode) kbSetNumMode();
   document.getElementById("kb-alpha").style.display = "none";
   naimDropdownClose();
   const nomTab2 = document.getElementById("kb-tab-3"); if(nomTab2) nomTab2.classList.remove("active");
-  setTimeout(() => { _kbScrollLock = false; }, 200);
 }
 
 function kbRefreshDisplay() {
@@ -1245,7 +1222,7 @@ const _NOM_FIELD = "nom"; // alohida, KB_FIELDS da yo'q
 function kbNext() {
   kbConfirmField();
   if (kbActiveField < KB_FIELDS.length - 1) {
-    // uzun→keng yoki keng→son
+    // uzun→keng yoki keng→son: keyboard ochiq, faqat field almashadi
     kbActiveField++;
     const f = KB_FIELDS[kbActiveField];
     const el = document.getElementById(`f-${f}-${kbActiveRow}`);
@@ -1260,19 +1237,102 @@ function kbNext() {
     kbSetNumMode();
     _kbScrollToActive();
   } else if (!_kbIsNaimMode) {
-    // son → nom
+    // son → nom: keyboard ochiq, faqat rejim almashadi
     kbSetNaimMode();
     const naimEl2 = kbActiveRow !== -1 ? document.getElementById("f-naim-" + kbActiveRow) : null;
     if (naimEl2) naimDropdownShow(naimEl2);
+    _kbScrollToActive();
   } else {
-    // nom fieldida → yangi qator
+    // nom → yangi qator: keyboard YOPILMAYDI, faqat qator almashadi
     const row = kbActiveRow;
     if (row !== -1) saveEdit(row);
-    kbClose();
-    setTimeout(() => {
-      if (row + 1 < details.length) startEdit(row + 1);
-      else addRow();
-    }, 50);
+    const nextRow = row + 1;
+    if (nextRow < details.length) {
+      // Mavjud keyingi qator
+      _kbSwitchRow(nextRow);
+    } else {
+      // Yangi qator qo'shamiz
+      _kbAddRowKeepKeyboard();
+    }
+  }
+}
+
+function _kbSwitchRow(rowIdx) {
+  // Keyboard yopilmasdan boshqa qatorga o'tish
+  kbActiveRow = rowIdx;
+  kbActiveField = 0;
+  // Avval editing classni yangilash
+  document.querySelectorAll(".detail-row.editing").forEach(r => r.classList.remove("editing"));
+  const newRow = document.getElementById("row-" + rowIdx);
+  if (newRow) newRow.classList.add("editing");
+  // Inputlarni ko'rsatish/yashirish
+  document.querySelectorAll(".size-field").forEach(el => {
+    el.style.display = "none";
+    el.classList.remove("kb-active");
+  });
+  document.querySelectorAll(".detail-size-text, .detail-name-text").forEach(el => el.style.display = "none");
+  ["uzun","keng","son"].forEach(f => {
+    const el = document.getElementById(`f-${f}-${rowIdx}`);
+    if (el) el.style.display = "";
+  });
+  const naimEl = document.getElementById("f-naim-" + rowIdx);
+  if (naimEl) { naimEl.style.display = ""; naimEl.setAttribute("readonly",""); }
+  // Active field
+  const f = KB_FIELDS[0];
+  const el = document.getElementById(`f-${f}-${rowIdx}`);
+  const stored = details[rowIdx] ? details[rowIdx][f] : 0;
+  kbCurrentVal = stored === 0 ? "" : String(stored);
+  if (el) el.classList.add("kb-active");
+  kbRefreshDisplay();
+  if (_kbIsNaimMode) kbSetNumMode();
+  requestAnimationFrame(() => requestAnimationFrame(() => _kbScrollToActive()));
+}
+
+function _kbAddRowKeepKeyboard() {
+  // Yangi qator qo'shamiz, keyboard yopilmaydi
+  details.push({uzun:0,keng:0,son:1,uzun1:"",uzun2:"",keng1:"",keng2:""});
+  const newIdx = details.length - 1;
+  kbActiveRow = newIdx;
+  kbActiveField = 0;
+  kbCurrentVal = "";
+  // renderList DOM ni yangilaydi
+  renderList();
+  // renderList editing holatini o'chiradi, qayta qo'yamiz
+  const newRow = document.getElementById("row-" + newIdx);
+  if (newRow) newRow.classList.add("editing");
+  document.querySelectorAll(".size-field").forEach(el => {
+    el.style.display = "none";
+    el.classList.remove("kb-active");
+  });
+  document.querySelectorAll(".detail-size-text, .detail-name-text").forEach(el => el.style.display = "none");
+  ["uzun","keng","son"].forEach(f => {
+    const el = document.getElementById(`f-${f}-${newIdx}`);
+    if (el) el.style.display = "";
+  });
+  const naimEl = document.getElementById("f-naim-" + newIdx);
+  if (naimEl) { naimEl.style.display = ""; naimEl.setAttribute("readonly",""); }
+  const el = document.getElementById("f-uzun-" + newIdx);
+  if (el) el.classList.add("kb-active");
+  kbRefreshDisplay();
+  if (_kbIsNaimMode) kbSetNumMode();
+  _kbRebindRow(newIdx);
+  requestAnimationFrame(() => requestAnimationFrame(() => _kbScrollToActive()));
+}
+
+function _kbRebindRow(i) {
+  KB_FIELDS.forEach((f, fi) => {
+    const el = document.getElementById(`f-${f}-${i}`);
+    if (!el) return;
+    const clone = el.cloneNode(true);
+    el.parentNode.replaceChild(clone, el);
+    const fresh = document.getElementById(`f-${f}-${i}`);
+    fresh.addEventListener("touchstart", e => { e.preventDefault(); kbOpen(i, fi); }, { passive: false });
+    fresh.addEventListener("mousedown", () => kbOpen(i, fi));
+  });
+  const naimEl = document.getElementById("f-naim-" + i);
+  if (naimEl) {
+    naimEl.addEventListener("touchstart", e => { e.preventDefault(); kbSetNaimMode(); naimDropdownShow(naimEl); }, { passive: false });
+    naimEl.addEventListener("mousedown", () => { kbSetNaimMode(); naimDropdownShow(naimEl); });
   }
 }
 
@@ -1614,42 +1674,35 @@ function naimPick(val) {
   }
 }
 
-if (window.visualViewport) {
-  window.visualViewport.addEventListener("resize", () => {
-    _kbUpdateLayout();
-    if (!_kbScrollLock) setTimeout(_kbScrollToActive, 50);
-  });
-}
 
-// ── Scroll button drag ────────────────────────────────────────────────────────
+
+
+
+// ── Scroll thumb ──────────────────────────────────────────────────────────────
 (function() {
-  let _dragY = 0, _dragScrollY = 0, _dragging = false;
-
-  function onStart(e) {
-    _dragging = true;
-    _dragY = e.touches ? e.touches[0].clientY : e.clientY;
-    _dragScrollY = window.scrollY;
-    e.preventDefault();
+  let _hideTimer = null;
+  function updateThumb() {
+    const panel = document.getElementById("screen-list-scroll");
+    const thumb = document.getElementById("scroll-thumb");
+    if (!panel || !thumb) return;
+    const { scrollTop, scrollHeight, clientHeight } = panel;
+    if (scrollHeight <= clientHeight) { thumb.classList.remove("visible"); return; }
+    const ratio = clientHeight / scrollHeight;
+    const trackH = panel.closest(".screen-scroll-wrap")
+      .querySelector(".scroll-track").offsetHeight;
+    const thumbH = Math.max(24, trackH * ratio);
+    const thumbTop = (scrollTop / (scrollHeight - clientHeight)) * (trackH - thumbH);
+    thumb.style.height = thumbH + "px";
+    thumb.style.top = thumbTop + "px";
+    thumb.classList.add("visible");
+    clearTimeout(_hideTimer);
+    _hideTimer = setTimeout(() => thumb.classList.remove("visible"), 1200);
   }
-  function onMove(e) {
-    if (!_dragging) return;
-    const y = e.touches ? e.touches[0].clientY : e.clientY;
-    const delta = _dragY - y; // yuqoriga suring — pastga scroll
-    window.scrollTo({ top: _dragScrollY + delta * 1.5, behavior: "auto" });
-    e.preventDefault();
-  }
-  function onEnd() { _dragging = false; }
-
   document.addEventListener("DOMContentLoaded", () => {
-    const btn = document.getElementById("kb-scroll-btn");
-    if (!btn) return;
-    btn.addEventListener("touchstart", onStart, { passive: false });
-    btn.addEventListener("touchmove",  onMove,  { passive: false });
-    btn.addEventListener("touchend",   onEnd);
-    btn.addEventListener("mousedown",  onStart);
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup",   onEnd);
+    const panel = document.getElementById("screen-list-scroll");
+    if (panel) panel.addEventListener("scroll", updateThumb, { passive: true });
   });
+  window._updateScrollThumb = updateThumb;
 })();
 
 </script>
