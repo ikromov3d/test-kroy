@@ -23,7 +23,8 @@ body {
   background: var(--bg); color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 15px; min-height: 100vh; padding-bottom: 80px;
-  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  touch-action: pan-y;
 }
 
 /* HEADER */
@@ -673,16 +674,7 @@ function startEdit(i) {
   }
 
   kbOpen(i, 0);
-  setTimeout(() => {
-    const kbH = document.getElementById("custom-kb").offsetHeight || 0;
-    const rect = row.getBoundingClientRect();
-    const vv = window.visualViewport;
-    const viewH = (vv ? vv.height : window.innerHeight) - kbH - 8;
-    if (rect.bottom > viewH || rect.top < 0) {
-      const scrollY = window.scrollY + rect.top - viewH / 2;
-      window.scrollTo({ top: scrollY, behavior: "smooth" });
-    }
-  }, 100);
+  setTimeout(_kbScrollToActive, 120);
 }
 
 function saveEdit(i) {
@@ -730,7 +722,7 @@ function addRow() {
   renderList();
   const idx = details.length-1;
   startEdit(idx);
-  setTimeout(() => document.getElementById("row-"+idx)?.scrollIntoView({behavior:"smooth",block:"center"}), 60);
+  setTimeout(_kbScrollToActive, 120);
 }
 
 // ── RENDER KROMKA ─────────────────────────────────────────────────────────────
@@ -1085,10 +1077,31 @@ function kbOpen(rowIdx, fieldIdx) {
   if (el) el.classList.add("kb-active");
   kbRefreshDisplay();
   document.getElementById("custom-kb").classList.add("visible");
-  const _kbH = document.getElementById("custom-kb").offsetHeight;
-  document.querySelector(".bottom-bar").style.bottom = _kbH + "px";
-  document.body.style.paddingBottom = (_kbH + 80) + "px";
+  _kbUpdateLayout();
   if (_kbIsNaimMode) kbSetNumMode();
+}
+
+function _kbUpdateLayout() {
+  const kb = document.getElementById("custom-kb");
+  const kbH = kb.offsetHeight || 0;
+  document.querySelector(".bottom-bar").style.bottom = kbH + "px";
+  document.body.style.paddingBottom = (kbH + 80) + "px";
+}
+
+function _kbScrollToActive() {
+  if (kbActiveRow === -1) return;
+  const row = document.getElementById("row-" + kbActiveRow);
+  if (!row) return;
+  const kb = document.getElementById("custom-kb");
+  const kbH = kb && kb.classList.contains("visible") ? kb.offsetHeight : 0;
+  const vv = window.visualViewport;
+  const viewH = (vv ? vv.height : window.innerHeight) - kbH - 12;
+  const rect = row.getBoundingClientRect();
+  const scrollOffset = vv ? (window.scrollY + vv.offsetTop) : window.scrollY;
+  if (rect.bottom > viewH || rect.top < 8) {
+    const target = scrollOffset + rect.top - viewH / 2 + rect.height / 2;
+    window.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
+  }
 }
 
 function kbClose() {
@@ -1190,6 +1203,7 @@ function kbNext() {
     if (el) el.classList.add("kb-active");
     kbRefreshDisplay();
     kbSetNumMode();
+    setTimeout(_kbScrollToActive, 80);
   } else if (!_kbIsNaimMode) {
     // son → nom
     kbSetNaimMode();
@@ -1535,6 +1549,12 @@ function naimPick(val) {
   }
 }
 
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", () => {
+    _kbUpdateLayout();
+    setTimeout(_kbScrollToActive, 100);
+  });
+}
 
 </script>
 </body>
