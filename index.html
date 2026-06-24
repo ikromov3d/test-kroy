@@ -540,51 +540,11 @@ const SHEET_SIZES = [[2440,1220],[2500,1830],[2750,1830],[2800,2070]];
 
   // Delete va row tap — event delegation
   const listEl = document.getElementById("detail-list");
-  let _lsx = 0, _lsy = 0, _lmoved = false, _lpending = null;
 
-  listEl.addEventListener("touchstart", e => {
-    _lsx = e.touches[0].clientX;
-    _lsy = e.touches[0].clientY;
-    _lmoved = false;
-    _lpending = e.target;
-  }, { passive: true });
-
-  listEl.addEventListener("touchmove", e => {
-    if (Math.abs(e.touches[0].clientX - _lsx) > 8 ||
-        Math.abs(e.touches[0].clientY - _lsy) > 8) {
-      _lmoved = true;
-      _lpending = null;
-    }
-  }, { passive: true });
-
-  listEl.addEventListener("touchend", e => {
-    if (_lmoved || !_lpending) return;
-    const target = _lpending;
-    _lpending = null;
-
-    const delBtn = target.closest("[data-del]");
-    if (delBtn) {
-      e.preventDefault();
-      deleteRow(parseInt(delBtn.dataset.del));
-      return;
-    }
-    if (target.tagName === "INPUT" || target.tagName === "BUTTON") return;
-    const row = target.closest(".detail-row");
-    if (!row) return;
-    const idx = parseInt(row.id.replace("row-",""));
-    if (isNaN(idx)) return;
-    e.preventDefault();
-    if (row.classList.contains("editing")) {
-      closeAllEdits();
-    } else {
-      startEdit(idx);
-    }
-  }, { passive: false });
-
-  listEl.addEventListener("mousedown", e => {
+  // Faqat click — telefonda scroll vs tap farqini brauzer o'zi hal qiladi
+  listEl.addEventListener("click", e => {
     const delBtn = e.target.closest("[data-del]");
     if (delBtn) {
-      e.preventDefault();
       deleteRow(parseInt(delBtn.dataset.del));
       return;
     }
@@ -593,7 +553,6 @@ const SHEET_SIZES = [[2440,1220],[2500,1830],[2750,1830],[2800,2070]];
     if (!row) return;
     const idx = parseInt(row.id.replace("row-",""));
     if (isNaN(idx)) return;
-    e.preventDefault();
     if (row.classList.contains("editing")) {
       closeAllEdits();
     } else {
