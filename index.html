@@ -445,7 +445,7 @@ body {
     <div class="kb-tab" id="kb-tab-0">Uzun</div>
     <div class="kb-tab" id="kb-tab-1">Keng</div>
     <div class="kb-tab" id="kb-tab-2">Son</div>
-    <div class="kb-tab" id="kb-tab-3" onclick="kbSetNaimMode()">Nom</div>
+    <div class="kb-tab" id="kb-tab-3">Nom</div>
   </div>
   <div class="kb-display">
     <div class="kb-display-val" id="kb-val">—</div>
@@ -540,39 +540,43 @@ const SHEET_SIZES = [[2440,1220],[2500,1830],[2750,1830],[2800,2070]];
 
   // Delete va row tap — event delegation
   const listEl = document.getElementById("detail-list");
-  let _listTouchStartX = 0, _listTouchStartY = 0, _listMoved = false;
+  let _lsx = 0, _lsy = 0, _lmoved = false, _lpending = null;
 
   listEl.addEventListener("touchstart", e => {
-    _listTouchStartX = e.touches[0].clientX;
-    _listTouchStartY = e.touches[0].clientY;
-    _listMoved = false;
-    // Delete tugmasi — darhol
-    const delBtn = e.target.closest("[data-del]");
-    if (delBtn) {
-      e.preventDefault();
-      e.stopPropagation();
-      deleteRow(parseInt(delBtn.dataset.del));
-    }
-  }, { passive: false });
+    _lsx = e.touches[0].clientX;
+    _lsy = e.touches[0].clientY;
+    _lmoved = false;
+    _lpending = e.target;
+  }, { passive: true });
 
   listEl.addEventListener("touchmove", e => {
-    const dx = Math.abs(e.touches[0].clientX - _listTouchStartX);
-    const dy = Math.abs(e.touches[0].clientY - _listTouchStartY);
-    if (dx > 6 || dy > 6) _listMoved = true;
+    if (Math.abs(e.touches[0].clientX - _lsx) > 8 ||
+        Math.abs(e.touches[0].clientY - _lsy) > 8) {
+      _lmoved = true;
+      _lpending = null;
+    }
   }, { passive: true });
 
   listEl.addEventListener("touchend", e => {
-    if (_listMoved) return;
-    const row = e.target.closest(".detail-row");
+    if (_lmoved || !_lpending) return;
+    const target = _lpending;
+    _lpending = null;
+
+    const delBtn = target.closest("[data-del]");
+    if (delBtn) {
+      e.preventDefault();
+      deleteRow(parseInt(delBtn.dataset.del));
+      return;
+    }
+    if (target.tagName === "INPUT" || target.tagName === "BUTTON") return;
+    const row = target.closest(".detail-row");
     if (!row) return;
-    if (e.target.tagName === "INPUT" || e.target.tagName === "BUTTON") return;
     const idx = parseInt(row.id.replace("row-",""));
     if (isNaN(idx)) return;
+    e.preventDefault();
     if (row.classList.contains("editing")) {
-      // Aktiv qatorga qayta bosilsa — deactivate
       closeAllEdits();
     } else {
-      e.preventDefault();
       startEdit(idx);
     }
   }, { passive: false });
@@ -581,19 +585,18 @@ const SHEET_SIZES = [[2440,1220],[2500,1830],[2750,1830],[2800,2070]];
     const delBtn = e.target.closest("[data-del]");
     if (delBtn) {
       e.preventDefault();
-      e.stopPropagation();
       deleteRow(parseInt(delBtn.dataset.del));
       return;
     }
+    if (e.target.tagName === "INPUT" || e.target.tagName === "BUTTON") return;
     const row = e.target.closest(".detail-row");
     if (!row) return;
-    if (e.target.tagName === "INPUT" || e.target.tagName === "BUTTON") return;
     const idx = parseInt(row.id.replace("row-",""));
     if (isNaN(idx)) return;
+    e.preventDefault();
     if (row.classList.contains("editing")) {
       closeAllEdits();
     } else {
-      e.preventDefault();
       startEdit(idx);
     }
   });
@@ -1087,6 +1090,7 @@ function kbBindEvents() {
     if (!tab) return;
     e.preventDefault();
     const idx = parseInt(tab.id.replace("kb-tab-",""));
+    if (idx === 3) { kbSetNaimMode(); return; }
     if (!isNaN(idx)) kbSwitchField(idx);
   }, { passive: false });
 
@@ -1096,6 +1100,7 @@ function kbBindEvents() {
     if (!tab) return;
     e.preventDefault();
     const idx = parseInt(tab.id.replace("kb-tab-",""));
+    if (idx === 3) { kbSetNaimMode(); return; }
     if (!isNaN(idx)) kbSwitchField(idx);
   });
 }
@@ -1442,6 +1447,7 @@ function kbSetNaimMode() {
     naimEl.removeAttribute("readonly");
     naimEl.classList.add("kb-active");
     _naimActiveInput = naimEl;
+    naimChipsUpdate();
   }
   kbRenderAlpha("en");
 }
