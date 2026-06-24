@@ -1177,21 +1177,33 @@ function kbNext() {
   kbConfirmField();
   if (kbActiveField < KB_FIELDS.length - 1) {
     kbActiveField++;
-    const f = KB_FIELDS[kbActiveField];
-    const el = document.getElementById(`f-${f}-${kbActiveRow}`);
-    const raw = el ? el.value : "";
-    const stored = details[kbActiveRow] ? details[kbActiveRow][f] : 0;
-    const defaultVals = { uzun: 0, keng: 0, son: 1 };
-    const isDefault = stored === defaultVals[f] && String(stored) === raw;
-    kbCurrentVal = isDefault ? "" : raw;
-    document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
-    if (el) el.classList.add("kb-active");
-    kbRefreshDisplay();
-    kbSetNumMode();
+    if (kbActiveField === KB_FIELDS.length - 1) {
+      // Nom fieldi
+      kbSetNaimMode();
+      const naimEl2 = kbActiveRow !== -1 ? document.getElementById("f-naim-" + kbActiveRow) : null;
+      if (naimEl2) naimDropdownShow(naimEl2);
+    } else {
+      const f = KB_FIELDS[kbActiveField];
+      const el = document.getElementById(`f-${f}-${kbActiveRow}`);
+      const raw = el ? el.value : "";
+      const stored = details[kbActiveRow] ? details[kbActiveRow][f] : 0;
+      const defaultVals = { uzun: 0, keng: 0, son: 1 };
+      const isDefault = stored === defaultVals[f] && String(stored) === raw;
+      kbCurrentVal = isDefault ? "" : raw;
+      document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
+      if (el) el.classList.add("kb-active");
+      kbRefreshDisplay();
+      kbSetNumMode();
+    }
   } else {
-    kbSetNaimMode();
-    const naimEl2 = kbActiveRow !== -1 ? document.getElementById("f-naim-" + kbActiveRow) : null;
-    if (naimEl2) naimDropdownShow(naimEl2);
+    // Nom fieldida OK bosish — yangi qator
+    const row = kbActiveRow;
+    if (row !== -1) saveEdit(row);
+    kbClose();
+    setTimeout(() => {
+      if (row + 1 < details.length) startEdit(row + 1);
+      else addRow();
+    }, 50);
   }
 }
 
