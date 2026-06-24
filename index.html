@@ -926,8 +926,12 @@ function renderKroyResult(data) {
     </div>`;
 
     if (r.not_fit && r.not_fit.length) {
+      const totalNotFit = r.not_fit.reduce((sum, x) => {
+        const m = (x.label||"").match(/\((\d+) ta\)/);
+        return sum + (m ? parseInt(m[1]) : 1);
+      }, 0);
       html += `<div class="not-fit-box">
-        <div class="not-fit-title">❌ Sig'madi (${r.not_fit.length} ta):</div>
+        <div class="not-fit-title">❌ Sig'madi (${totalNotFit} ta):</div>
         ${r.not_fit.map(x=>`<div class="not-fit-item">• ${x.label||JSON.stringify(x)}</div>`).join("")}
       </div>`;
     }
