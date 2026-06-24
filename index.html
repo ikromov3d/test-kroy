@@ -249,7 +249,7 @@ body {
 .custom-kb {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
   background: var(--bg2); border-top: 1px solid var(--sep);
-  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
   transform: translateY(100%);
   transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
 }
@@ -277,25 +277,26 @@ body {
 .kb-display-label { font-size: 12px; color: var(--hint); min-width: 36px; }
 .kb-display-val { flex: 1; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
 .kb-display-eval { font-size: 13px; color: var(--green); min-width: 60px; text-align: right; }
-.kb-rows { display: flex; flex-direction: column; gap: 5px; padding: 0 4px; }
+.kb-rows { display: flex; flex-direction: column; gap: 5px; }
 .kb-row { display: flex; gap: 5px; }
 .kb-row .kb-btn { flex: 1; }
 
 .kb-btn {
   height: 54px; border: none; border-radius: 9px;
   background: var(--bg); color: var(--text);
-  font-size: 24px; font-weight: 500; cursor: pointer;
+  font-size: 22px; font-weight: 500; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: opacity 0.1s;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   user-select: none;
 }
 .kb-btn:active { opacity: 0.5; }
-.kb-btn.op { color: var(--blue); font-size: 24px; }
-.kb-btn.del { background: rgba(255,69,58,0.12); color: var(--red); font-size: 22px; }
-.kb-btn.ok  { background: var(--btn); color: var(--btn-text); font-size: 20px; font-weight: 700; }
-.kb-btn.next { background: rgba(10,132,255,0.12); color: var(--blue); font-size: 18px; font-weight: 600; }
+.kb-btn.op   { background: var(--bg); color: var(--blue); }
+.kb-btn.del  { background: rgba(255,69,58,0.12); color: var(--red); }
+.kb-btn.ok   { background: var(--btn); color: var(--btn-text); font-weight: 700; }
+.kb-btn.next { background: rgba(10,132,255,0.12); color: var(--blue); font-weight: 600; }
+.kb-btn.clear{ background: rgba(255,69,58,0.12); color: var(--red); }
+.kb-btn.globe{ background: var(--bg); }
 .naim-chips-kb {
   display: none; flex-direction: column; gap: 4px;
   padding: 6px 8px 2px; border-bottom: 1px solid var(--sep);
@@ -683,7 +684,7 @@ function startEdit(i) {
   }
 
   kbOpen(i, 0);
-  // scroll visualViewport resize orqali chaqiriladi
+
 }
 
 function saveEdit(i) {
@@ -731,7 +732,7 @@ function addRow() {
   renderList();
   const idx = details.length-1;
   startEdit(idx);
-  // scroll visualViewport resize orqali chaqiriladi
+
 }
 
 // ── RENDER KROMKA ─────────────────────────────────────────────────────────────
@@ -1086,9 +1087,15 @@ function kbOpen(rowIdx, fieldIdx) {
   document.querySelectorAll(".size-field.kb-active").forEach(e => e.classList.remove("kb-active"));
   if (el) el.classList.add("kb-active");
   kbRefreshDisplay();
+  const _wasVisible = document.getElementById("custom-kb").classList.contains("visible");
   document.getElementById("custom-kb").classList.add("visible");
   _kbUpdateLayout();
-  if (!_kbScrollLock) setTimeout(_kbScrollToActive, 50);
+  if (!_kbScrollLock) {
+    // Keyboard yangi ochilgan bo'lsa — visualViewport resize keyin scroll qiladi
+    // Keyboard allaqachon ochiq bo'lsa (field almashdi) — hoziroq scroll
+    if (_wasVisible) _kbScrollToActive();
+    else setTimeout(_kbScrollToActive, 50);
+  }
   if (_kbIsNaimMode) kbSetNumMode();
 }
 
@@ -1129,7 +1136,7 @@ function kbClose() {
   document.getElementById("kb-alpha").style.display = "none";
   naimDropdownClose();
   const nomTab2 = document.getElementById("kb-tab-3"); if(nomTab2) nomTab2.classList.remove("active");
-  setTimeout(() => { _kbScrollLock = false; }, 350);
+  setTimeout(() => { _kbScrollLock = false; }, 200);
 }
 
 function kbRefreshDisplay() {
@@ -1217,7 +1224,7 @@ function kbNext() {
     if (el) el.classList.add("kb-active");
     kbRefreshDisplay();
     kbSetNumMode();
-    setTimeout(_kbScrollToActive, 80);
+    _kbScrollToActive();
   } else if (!_kbIsNaimMode) {
     // son → nom
     kbSetNaimMode();
@@ -1310,10 +1317,10 @@ function kbRenderAlpha(lang) {
   const rows = lang === "en" ? en : ru;
   const GAP = 4;
   const SIDE = 44;
-  const PAD = 8;
+  const PAD = 0;
 
-  const btnBase = `height:50px;border-radius:8px;background:var(--bg);color:var(--text);border:none;font-size:17px;font-weight:500;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;`;
-  const sideStyle = `flex:0 0 ${SIDE}px;height:52px;border-radius:8px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;`;
+  const btnBase = `flex:1;height:50px;border-radius:8px;background:var(--bg);color:var(--text);border:none;font-size:17px;font-weight:500;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;`;
+  const sideStyle = `flex:1;height:50px;border-radius:8px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;font-size:20px;`;
 
   let html = "";
 
@@ -1321,7 +1328,7 @@ function kbRenderAlpha(lang) {
     const n = row.length;
     if (ri === 2) {
       const letterW = `calc((100% - ${PAD*2 + SIDE*2 + GAP*(n+1)}px) / ${n})`;
-      html += `<div style="display:flex;gap:${GAP}px;padding:0 ${PAD}px;margin-bottom:${GAP}px;align-items:center;">`;
+      html += `<div style="display:flex;gap:${GAP}px;margin-bottom:${GAP}px;align-items:center;">`;
       html += `<button data-kb="SHIFT" style="${sideStyle}background:rgba(142,142,147,0.18);color:var(--text);font-size:22px;">⇧</button>`;
       row.forEach(ch => {
         html += `<button class="kb-btn" data-kb="NAIM:${ch}" style="${btnBase}flex:0 0 ${letterW};">${ch}</button>`;
@@ -1330,7 +1337,7 @@ function kbRenderAlpha(lang) {
       html += `</div>`;
     } else {
       const letterW = `calc((100% - ${PAD*2 + GAP*(n-1)}px) / ${n})`;
-      html += `<div style="display:flex;gap:${GAP}px;padding:0 ${PAD}px;margin-bottom:${GAP}px;">`;
+      html += `<div style="display:flex;gap:${GAP}px;margin-bottom:${GAP}px;">`;
       row.forEach(ch => {
         html += `<button class="kb-btn" data-kb="NAIM:${ch}" style="${btnBase}flex:0 0 ${letterW};">${ch}</button>`;
       });
@@ -1338,12 +1345,12 @@ function kbRenderAlpha(lang) {
     }
   });
 
-  html += `<div style="display:flex;gap:${GAP}px;padding:0 ${PAD}px;margin-top:2px;">
-    <button class="kb-btn clear" data-kb="CLEAR" style="${sideStyle}background:rgba(142,142,147,0.18);font-size:18px;">🗑</button>
-    <button class="kb-btn globe" data-kb="GLOBE" style="${sideStyle}background:rgba(142,142,147,0.18);font-size:18px;">🌐</button>
-    <button data-kb="NAIM: " style="flex:1;height:52px;border-radius:8px;background:var(--bg);color:var(--hint);border:none;font-size:16px;cursor:pointer;touch-action:manipulation;">space</button>
-    <button data-kb="ALPHA_NEXT" style="flex:0 0 58px;height:52px;border-radius:8px;background:rgba(10,132,255,0.15);color:var(--blue);border:none;font-size:16px;font-weight:700;cursor:pointer;touch-action:manipulation;">next</button>
-    <button class="kb-btn ok" data-kb="OK" style="flex:0 0 58px;height:52px;border-radius:8px;background:var(--btn);color:var(--btn-text);border:none;font-size:18px;font-weight:700;cursor:pointer;touch-action:manipulation;">OK</button>
+  html += `<div style="display:flex;gap:${GAP}px;margin-top:2px;">
+    <button class="kb-btn clear" data-kb="CLEAR">🗑</button>
+    <button class="kb-btn globe" data-kb="GLOBE">🌐</button>
+    <button class="kb-btn" data-kb="NAIM: " style="flex:2;color:var(--hint);font-size:14px;">space</button>
+    <button class="kb-btn next" data-kb="ALPHA_NEXT">next</button>
+    <button class="kb-btn ok" data-kb="OK">OK</button>
   </div>`;
 
   document.getElementById("kb-rows").style.display = "none";
