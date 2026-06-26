@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Kroy</title>
+<title>Kroy dasturi</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 :root {
@@ -352,7 +352,7 @@ body {
 
 
 <div class="header">
-  <div class="header-title">✂️ Kroy</div>
+  <div class="header-title">✂️ Kroy dasturi</div>
   <div class="tab-bar">
     <button class="tab active" id="tab-list" onclick="switchTab('list')">📋 Ro'yxat</button>
     <button class="tab" id="tab-krom" onclick="switchTab('krom')">🎨 Kromka</button>
@@ -924,6 +924,13 @@ function renderKroyResult(data) {
       <div class="kroy-summary-mat">${r.count} ta list</div>
       <div class="kroy-summary-info">O'rtacha: ${r.efficiency}%</div>
     </div>`;
+
+    if (r.kromka && Object.keys(r.kromka).length) {
+      const kromLines = Object.entries(r.kromka)
+        .map(([tip, m]) => `<div style="font-size:13px;color:var(--hint);">〰️ ${tip}: <b style="color:var(--text)">${m} m</b></div>`)
+        .join("");
+      html += `<div style="background:var(--bg2);border-radius:10px;padding:10px 14px;margin-bottom:10px;">${kromLines}</div>`;
+    }
 
     if (r.not_fit && r.not_fit.length) {
       const totalNotFit = r.not_fit.reduce((sum, x) => {
